@@ -4,3 +4,4 @@ pymongo
 dnspython
 earthengine-api
 gunicorn
+certifi
