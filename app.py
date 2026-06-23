@@ -8,6 +8,10 @@ import os
 from pymongo import MongoClient
 import certifi
 
+print("====================================================")
+print("🚀 CACHE BREAKER v2.0: RUNNING BRUTE FORCE CODE ENGINE!!")
+print("====================================================")
+
 app = Flask(__name__, template_folder='.', static_folder='.', static_url_path='')
 app.secret_key = 'vriddhi_super_secret_session_key_987'
 CORS(app)
@@ -92,25 +96,27 @@ if marketplace_col.count_documents({}) == 0:
     ])
 
 def force_ee_initialization():
-    """Bulletproof Earth Engine initialization engine for cloud deployments."""
+    """Ultra-safe Earth Engine initialization bypassing all string parsing loops."""
     try:
         if ee.data.is_initialized():
             return True
     except Exception:
         pass
         
-    raw_key = os.getenv('GEE_JSON_KEY')
+    raw_key = os.getenv('EARTHENGINE_SERVICE_ACCOUNT_KEY') or os.getenv('GEE_JSON_KEY')
     if raw_key:
         try:
-            # Check if environment variable is passed parsed as a dict map object
+            # If it's already a clean dictionary mapping context object, use it directly
             if isinstance(raw_key, dict):
                 key_data = raw_key
             else:
-                # Process clean string execution logic mappings safely
-                raw_key = raw_key.strip()
-                if raw_key.startswith("'") and raw_key.endswith("'"): raw_key = raw_key[1:-1]
-                if raw_key.startswith('"') and raw_key.endswith('"'): raw_key = raw_key[1:-1]
-                key_data = json.loads(raw_key)
+                # If it's a string layout configuration, run direct JSON conversions
+                try:
+                    key_data = json.loads(raw_key)
+                except Exception:
+                    # In case of environment wrapped quotes configurations, extract cleanly
+                    import ast
+                    key_data = ast.literal_eval(raw_key)
             
             credentials = ee.ServiceAccountCredentials(key_data['client_email'], key_data)
             ee.Initialize(credentials, project=key_data['project_id'])
@@ -179,7 +185,7 @@ def analyze_field():
     if not session.get('user_id'):
         return jsonify({"status": "error", "message": "Unauthorized. Please sign in or register first."}), 401
         
-    # Fixed Route Thread Guard: Checking initialization safely using the correct helper method
+    # Fixed Thread Guard route connector logic
     try:
         is_ee_ready = ee.data.is_initialized()
     except Exception:
