@@ -2,6 +2,6 @@ Flask
 flask-cors
 pymongo
 dnspython
-earthengine-api
+earthengine-api>=1.5.0
 gunicorn
 certifi
