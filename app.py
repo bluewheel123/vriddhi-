@@ -93,8 +93,12 @@ if marketplace_col.count_documents({}) == 0:
 
 def force_ee_initialization():
     """Bulletproof Earth Engine initialization engine for cloud deployments."""
-    if ee.data._initialized:
-        return True
+    try:
+        # Fixed: Checking initialization status safely via the official method
+        if ee.data.is_initialized():
+            return True
+    except Exception:
+        pass
         
     raw_key = os.getenv('EARTHENGINE_SERVICE_ACCOUNT_KEY')
     if raw_key:
@@ -120,7 +124,7 @@ def force_ee_initialization():
             print("======> GEE Local Initialization Fallback Failed! Error:", str(e))
             return False
 
-# Run initialization engine once at global instance start
+# Run initialization engine once at global instance start setup sequence
 force_ee_initialization()
 
 @app.route('/api/farmer-stats', methods=['GET'])
@@ -171,8 +175,13 @@ def analyze_field():
     if not session.get('user_id'):
         return jsonify({"status": "error", "message": "Unauthorized. Please sign in or register first."}), 401
         
-    # Thread verification guard check for Render environments
-    if not ee.data._initialized:
+    # Thread verification guard check using the official initialization verification check method
+    try:
+        is_ee_ready = ee.data.is_initialized()
+    except Exception:
+        is_ee_ready = False
+
+    if not is_ee_ready:
         print("🔄 Verification fallback: Re-authenticating dynamic context request stream...")
         if not force_ee_initialization():
             return jsonify({"status": "error", "message": "Earth Engine client library is currently uninitialized on the host."}), 500
