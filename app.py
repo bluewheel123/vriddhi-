@@ -96,43 +96,65 @@ if marketplace_col.count_documents({}) == 0:
     ])
 
 def force_ee_initialization():
-    """Ultra-safe Earth Engine initialization bypassing all string parsing loops."""
+    """
+    Render-safe Google Earth Engine initialization.
+    Fixes: 'dict' object has no attribute 'endswith'
+    """
+
     try:
         if ee.data.is_initialized():
             return True
     except Exception:
         pass
-        
-    raw_key = os.getenv('EARTHENGINE_SERVICE_ACCOUNT_KEY') or os.getenv('GEE_JSON_KEY')
-    if raw_key:
-        try:
-            # If it's already a clean dictionary mapping context object, use it directly
-            if isinstance(raw_key, dict):
-                key_data = raw_key
-            else:
-                # If it's a string layout configuration, run direct JSON conversions
-                try:
-                    key_data = json.loads(raw_key)
-                except Exception:
-                    # In case of environment wrapped quotes configurations, extract cleanly
-                    import ast
-                    key_data = ast.literal_eval(raw_key)
-            
-            credentials = ee.ServiceAccountCredentials(key_data['client_email'], key_data)
-            ee.Initialize(credentials, project=key_data['project_id'])
-            print("======> GEE initialized successfully via Service Account! <======")
-            return True
-        except Exception as e:
-            print(f"❌ CRITICAL GEE AUTH FAILURE DETECTED: {str(e)}")
+
+    try:
+        raw_key = (
+            os.getenv("EARTHENGINE_SERVICE_ACCOUNT_KEY")
+            or os.getenv("GEE_JSON_KEY")
+        )
+
+        if not raw_key:
+            print("❌ No GEE credentials found in environment variables.")
             return False
-    else:
-        try:
-            ee.Initialize()
-            print("======> GEE initialized successfully via local context credentials! <======")
-            return True
-        except Exception as e:
-            print("======> GEE Local Initialization Fallback Failed! Error:", str(e))
-            return False
+
+        print("DEBUG ENV TYPE:", type(raw_key))
+
+        # Parse credentials
+        if isinstance(raw_key, str):
+            try:
+                key_data = json.loads(raw_key)
+            except Exception:
+                import ast
+                key_data = ast.literal_eval(raw_key)
+        else:
+            key_data = raw_key
+
+        # Create temporary JSON file
+        credential_file = "/tmp/gee_service_account.json"
+
+        with open(credential_file, "w") as f:
+            json.dump(key_data, f)
+
+        service_account = key_data["client_email"]
+
+        credentials = ee.ServiceAccountCredentials(
+            service_account,
+            credential_file
+        )
+
+        ee.Initialize(
+            credentials,
+            project=key_data.get("project_id")
+        )
+
+        print("✅ GEE INITIALIZED SUCCESSFULLY")
+        return True
+
+    except Exception as e:
+        import traceback
+        print("❌ CRITICAL GEE AUTH FAILURE DETECTED")
+        print(traceback.format_exc())
+        return False
 
 # Run initialization engine once at global instance start setup sequence
 force_ee_initialization()
