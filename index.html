@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Vriddhi 2.0 - Field Matrix Scanner</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght=400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --bg-color: #f3f4f6;
+            --panel-bg: #ffffff;
+            --primary: #10b981;
+            --primary-hover: #059669;
+            --dark-slate: #1f2937;
+            --text-muted: #6b7280;
+            --gold: #f59e0b;
+        }
+
+        body { 
+            margin: 0; 
+            padding: 0; 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--bg-color);
+            color: var(--dark-slate);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Modern Responsive Navbar */
+        .navbar {
+            background-color: var(--panel-bg);
+            min-height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            z-index: 1000;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--dark-slate);
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            padding: 0.4rem 0.8rem;
+            border-radius: 9999px;
+        }
+
+        .nav-link:hover {
+            color: var(--primary);
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        .nav-link.active {
+            color: var(--primary);
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .brand i {
+            font-size: 1.75rem;
+            color: var(--primary);
+        }
+
+        .brand-text {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+        }
+
+        .brand-text span {
+            color: var(--primary);
+        }
+
+        /* Gamified Credit Counter Widget */
+        .rewards-widget {
+            display: flex;
+            align-items: center;
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.25);
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            gap: 0.5rem;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #d97706;
+            transition: transform 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .rewards-widget:hover {
+            transform: scale(1.03);
+        }
+
+        .rewards-widget i {
+            color: var(--gold);
+            animation: coin-pulse 2s infinite alternate;
+        }
+
+        /* Dynamic Main Dashboard Container away from walls */
+        .dashboard-container {
+            flex: 1;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+            box-sizing: border-box;
+            height: calc(100vh - 70px);
+            min-height: 0; /* Prevents flex items from breaking layout overflow constraints */
+        }
+
+        .map-wrapper {
+            flex: 1;
+            background: var(--panel-bg);
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            border: 1px solid rgba(229, 231, 235, 1);
+            position: relative;
+            min-height: 200px;
+        }
+
+        #map { 
+            width: 100%; 
+            height: 100%; 
+        }
+
+        /* Clean Bottom Action Bar */
+        .action-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--panel-bg);
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            border: 1px solid rgba(229, 231, 235, 1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            gap: 1rem;
+            box-sizing: border-box;
+        }
+
+        .info-text {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            line-height: 1.4;
+        }
+
+        .btn { 
+            background: var(--primary); 
+            color: white; 
+            border: none; 
+            padding: 0.75rem 1.75rem; 
+            font-size: 0.95rem; 
+            font-weight: 600; 
+            cursor: pointer; 
+            border-radius: 8px; 
+            transition: all 0.2s ease; 
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
+            white-space: nowrap;
+        }
+
+        .btn:hover { 
+            background: var(--primary-hover); 
+            transform: translateY(-1px);
+            box-shadow: 0 6px 8px -1px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        @keyframes coin-pulse {
+            0% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(245, 158, 11, 0)); }
+            100% { transform: scale(1.15); filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.5)); }
+        }
+
+        /* Responsive Breakpoints Matrix */
+        @media (max-width: 768px) {
+            body {
+                overflow: auto; /* Allow natural scrolling on small touchscreens if required */
+                height: auto;
+            }
+
+            .navbar {
+                padding: 0.75rem 1rem;
+                flex-direction: column;
+                gap: 0.75rem;
+                height: auto;
+                align-items: center;
+                text-align: center;
+            }
+
+            .nav-links {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 0.5rem;
+                margin-top: 0.25rem;
+            }
+
+            .nav-link {
+                font-size: 0.8rem;
+                padding: 0.3rem 0.6rem;
+            }
+
+            .dashboard-container {
+                padding: 1rem;
+                height: auto;
+                min-height: calc(100vh - 120px);
+            }
+
+            .map-wrapper {
+                height: 450px; /* Locked explicit layout altitude block for mobile views */
+                flex: none;
+            }
+
+            .action-bar {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+                padding: 1.25rem 1rem;
+            }
+
+            .info-text {
+                flex-direction: column;
+                gap: 0.25rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .btn {
+                justify-content: center;
+                width: 100%;
+                padding: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="brand">
+            <img src="logo.png" alt="Vriddhi Logo" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; margin-right: 8px; border: 1px solid rgba(229, 231, 235, 1); box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);" />
+            <div class="brand-text">Vriddhi <span>2.0</span></div>
+        </div>
+        
+        <div class="nav-links">
+            <a href="/" class="nav-link">Home</a>
+            <a href="/dashboard" class="nav-link active">Dashboard</a>
+            <a href="/marketplace" class="nav-link">Marketplace</a>
+            <a href="/insurance-claim" class="nav-link">Insurance Claim</a>
+        </div>
+        
+        <div class="rewards-widget" id="credit-display">
+            <i class="fa-solid fa-coins"></i>
+            <span id="credit-count">100</span> Remediation Credits
+        </div>
+    </nav>
+
+    <div class="dashboard-container">
+        <div class="map-wrapper">
+            <div id="map"></div>
+        </div>
+        
+        <div class="action-bar">
+            <div class="info-text">
+                <i class="fa-solid fa-circle-info"></i>
+                <span>Draw a bounding polygon over target crop grids to initialize spatial telemetry tracking.</span>
+            </div>
+            <button id="launch-btn" class="btn">
+                <i class="fa-solid fa-satellite-dish"></i>
+                Launch Field Analysis
+            </button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+
+    <script>
+        // Center map over Assam
+        var map = L.map('map').setView([26.1445, 91.7362], 13);
+
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles &copy; Esri &mdash; Core Imaging Processing Framework'
+        }).addTo(map);
+
+        // Fetch user credit tally immediately on website page load
+        fetch('/api/farmer-stats')
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('credit-count').innerText = data.credit_points;
+            })
+            .catch(err => console.error("Could not fetch score stats profiles:", err));
+
+        var drawnItems = new L.FeatureGroup();
+        map.addLayer(drawnItems);
+
+        var drawControl = new L.Control.Draw({
+            edit: { featureGroup: drawnItems },
+            draw: { polygon: true, rectangle: true, polyline: false, circle: false, marker: false, circlemarker: false }
+        });
+        map.addControl(drawControl);
+
+        var activeFieldGeoJSON = null;
+        var scannedGeometriesList = [];
+
+        function isGeometryInScannedList(g) {
+            if (!g || scannedGeometriesList.length === 0) return false;
+            var coords = g.geometry ? g.geometry.coordinates : g.coordinates;
+            var coordsStr = JSON.stringify(coords);
+            return scannedGeometriesList.some(function(item) {
+                return JSON.stringify(item) === coordsStr;
+            });
+        }
+
+        map.on(L.Draw.Event.CREATED, function (e) {
+            drawnItems.clearLayers(); 
+            var layer = e.layer;
+            drawnItems.addLayer(layer);
+            activeFieldGeoJSON = layer.toGeoJSON();
+
+            try {
+                if (typeof L.GeometryUtil !== 'undefined' && typeof L.GeometryUtil.geodesicArea === 'function') {
+                    var latlngs = layer.getLatLngs();
+                    if (Array.isArray(latlngs[0])) {
+                        latlngs = latlngs[0];
+                    }
+                    var areaInSqMeters = L.GeometryUtil.geodesicArea(latlngs);
+                    var areaInHectares = (areaInSqMeters / 10000).toFixed(2);
+                    localStorage.setItem('selected_area_hectares', areaInHectares);
+                }
+                
+                if (typeof layer.getBounds === 'function') {
+                    var center = layer.getBounds().getCenter();
+                    var lat = center.lat.toFixed(4);
+                    var lng = center.lng.toFixed(4);
+                    var coordinatesString = lat + "°N, " + lng + "°E";
+                    localStorage.setItem('selected_area_coordinates', coordinatesString);
+                }
+            } catch (err) {
+                console.error("Telemetry tracking error:", err);
+            }
+        });
+
+        document.getElementById('launch-btn').addEventListener('click', function() {
+            if (activeFieldGeoJSON) {
+                if (isGeometryInScannedList(activeFieldGeoJSON)) {
+                    alert("The new data gets updated after 5 days so please check within day 5 to day 10.");
+                    return;
+                }
+                
+                const btn = document.getElementById('launch-btn');
+                const originalHTML = btn.innerHTML;
+                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Processing Matrix...`;
+                btn.style.opacity = "0.75";
+                btn.style.pointerEvents = "none";
+
+                fetch('/api/analyze-field', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(activeFieldGeoJSON)
+                })
+                .then(response => response.json())
+                .then(result => {
+                    btn.innerHTML = originalHTML;
+                    btn.style.opacity = "1";
+                    btn.style.pointerEvents = "auto";
+
+                    if (result.status === "success") {
+                        alert(result.message);
+                        
+                        // Dynamically adjust navbar points tracker using verified database payload values
+                        document.getElementById('credit-count').innerText = result.credit_points;
+
+                        if (result.data.features.length > 0) {
+                            var coords = activeFieldGeoJSON.geometry ? activeFieldGeoJSON.geometry.coordinates : activeFieldGeoJSON.coordinates;
+                            scannedGeometriesList.push(coords);
+                            L.geoJSON(result.data, {
+                                style: function (feature) {
+                                    return { color: '#ef4444', fillColor: '#f87171', fillOpacity: 0.5, weight: 2 };
+                                }
+                            }).addTo(map).bindPopup("<b>Vriddhi Health Alert</b><br>Severe anomaly signature identified. Clear field stress sections to unlock credit upgrades.");
+                        }
+                    } else {
+                        alert("Processing Error: " + result.message);
+                    }
+                })
+                .catch(error => {
+                    btn.innerHTML = originalHTML;
+                    btn.style.opacity = "1";
+                    btn.style.pointerEvents = "auto";
+                    console.error('Network Error:', error);
+                    alert("Could not establish communication link with analysis engines.");
+                });
+                
+            } else {
+                alert("Please use the polygon toolbar on the map to mark your field boundary first.");
+            }
+        });
+    </script>
+</body>
+</html>

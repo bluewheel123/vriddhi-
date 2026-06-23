@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vriddhi 2.0 — From Orbit to Soil</title>
+  <meta name="description" content="An interactive water-stream onboarding for Vriddhi 2.0 Digital Farms: AOI selection, dual scanning, anomaly remediation, and carbon credit rewards.">
+  <meta property="og:title" content="Vriddhi 2.0 — From Orbit to Soil">
+  <meta property="og:description" content="Scroll the stream. Map your farm. Earn carbon credits.">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+    
+    :root {
+      --gradient-hero: linear-gradient(135deg, #2563eb, #16a34a);
+      --shadow-soft: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+      --border: oklch(0.92 0.01 0);
+      --card: #ffffff;
+      --primary: oklch(0.55 0.16 145);
+      --primary-foreground: #ffffff;
+      --muted-foreground: oklch(0.55 0.01 0);
+      --background: #ffffff;
+    }
+
+    * {
+      font-family: 'Poppins', sans-serif;
+    }
+
+    @keyframes stream { 
+      0% { transform: translateY(-50%); } 
+      100% { transform: translateY(0); } 
+    }
+    
+    .animate-stream {
+      animation: stream 6s linear infinite;
+    }
+
+    @keyframes background-gradient {
+      0%, 100% { transform: translate(0, 0); }
+      20% { transform: translate(calc(30vw * var(--tx-1, 1)), calc(30vh * var(--ty-1, 1))); }
+      40% { transform: translate(calc(30vw * var(--tx-2, -1)), calc(30vh * var(--ty-2, 1))); }
+      60% { transform: translate(calc(30vw * var(--tx-3, 1)), calc(30vh * var(--ty-3, -1))); }
+      80% { transform: translate(calc(30vw * var(--tx-4, -1)), calc(30vh * var(--ty-4, -1))); }
+    }
+
+    .animate-background-gradient {
+      animation: background-gradient var(--background-gradient-speed, 25s) cubic-bezier(0.445, 0.05, 0.55, 0.95) infinite;
+    }
+
+    /* Spring-like transition overlay curves */
+    .mobile-menu-overlay {
+      transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1), opacity 300ms ease;
+    }
+
+    /* Word Rotator Engine Transition Mechanics */
+    .word-slide {
+      transition: transform 600ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 400ms ease;
+    }
+  </style>
+</head>
+<body class="bg-white text-slate-900 antialiased relative min-h-screen selection:bg-emerald-100">
+
+  <div id="ambient-backdrop" class="fixed inset-0 -z-20 overflow-hidden pointer-events-none w-full h-full blur-[110px] opacity-45"></div>
+
+  <header class="flex justify-center w-full py-6 px-4 sticky top-0 z-50">
+    <div class="flex items-center justify-between px-6 py-3 bg-white/80 rounded-full shadow-lg border border-slate-200/50 backdrop-blur-md w-full max-w-5xl relative z-10">
+      
+      <div class="flex items-center">
+        <div class="w-8 h-8 mr-6 transition-transform duration-300 hover:rotate-[10deg] cursor-pointer rounded-full overflow-hidden border border-slate-200 shadow-sm flex items-center justify-center bg-slate-50">
+          <img src="logo.png" alt="Vriddhi Logo" class="w-full h-full object-cover" />
+        </div>
+      </div>
+      
+      <nav class="hidden md:flex items-center space-x-8 ">
+        <a href="/" class="text-sm text-emerald-600 font-semibold transition-colors hover:scale-105 transform inline-block duration-200">Home</a>
+        <a href="/dashboard" class="text-sm text-gray-900 hover:text-emerald-600 font-medium transition-colors hover:scale-105 transform inline-block duration-200">Dashboard</a>
+        <a href="/marketplace" class="text-sm text-gray-900 hover:text-emerald-600 font-medium transition-colors hover:scale-105 transform inline-block duration-200">Marketplace</a>
+        <a href="/insurance-claim" class="text-sm text-gray-900 hover:text-emerald-600 font-medium transition-colors hover:scale-105 transform inline-block duration-200">Insurance Claim</a>
+      </nav>
+
+      <div class="hidden md:flex items-center space-x-4">
+        <button id="nav-login-btn" class="text-sm text-gray-900 hover:text-emerald-600 font-medium transition-colors hover:scale-105 transform inline-block duration-200">
+          Signin / Login
+        </button>
+        <div class="transition-transform duration-200 hover:scale-105">
+          <a href="/dashboard" class="inline-flex items-center justify-center px-5 py-2 text-sm text-white bg-black rounded-full hover:bg-slate-800 transition-colors shadow-sm">
+            Get Started
+          </a>
+        </div>
+      </div>
+
+      <button class="md:hidden flex items-center active:scale-90 transition-transform duration-100" onclick="toggleMobileMenu(true)" aria-label="Open menu">
+        <i data-lucide="menu" class="h-6 w-6 text-gray-900"></i>
+      </button>
+    </div>
+
+    <div id="mobile-menu" class="fixed inset-0 bg-white z-50 pt-24 px-6 md:hidden mobile-menu-overlay translate-x-full opacity-0 pointer-events-none">
+      <button class="absolute top-6 right-6 p-2 active:scale-90 transition-transform duration-100" onclick="toggleMobileMenu(false)" aria-label="Close menu">
+        <i data-lucide="x" class="h-6 w-6 text-gray-900"></i>
+      </button>
+      
+      <div class="flex flex-col space-y-6 text-center pt-8">
+        <a href="/" class="text-xl text-emerald-600 font-semibold hover:text-emerald-600 transition-colors" onclick="toggleMobileMenu(false)">Home</a>
+        <a href="/dashboard" class="text-xl text-gray-900 font-semibold hover:text-emerald-600 transition-colors" onclick="toggleMobileMenu(false)">Dashboard</a>
+        <a href="/marketplace" class="text-xl text-gray-900 font-semibold hover:text-emerald-600 transition-colors" onclick="toggleMobileMenu(false)">Marketplace</a>
+        <a href="/insurance-claim" class="text-xl text-gray-900 font-semibold hover:text-emerald-600 transition-colors" onclick="toggleMobileMenu(false)">Insurance Claim</a>
+        
+        <div class="pt-2">
+          <button id="nav-login-mobile-btn" class="text-xl text-gray-900 font-semibold hover:text-emerald-600 transition-colors">
+            Signin / Login
+          </button>
+        </div>
+        
+        <div class="pt-6">
+          <a href="/dashboard" class="inline-flex items-center justify-center w-full px-5 py-3.5 text-base font-medium text-white bg-black rounded-full hover:bg-gray-800 transition-colors shadow-md" onclick="toggleMobileMenu(false)">
+            Get Started
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="relative z-10 w-full">
+    <section class="relative overflow-hidden">
+      <div class="mx-auto max-w-5xl px-4 sm:px-6 pt-8 pb-12 text-center sm:pt-12">
+        <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/70 px-3 py-1 text-s font-medium text-slate-500 backdrop-blur-sm shadow-sm">
+          <i data-lucide="leaf" class="h-5.5 w-5.5 text-emerald-600"></i> Vriddhi 2.0 Digital Farms
+        </span>
+        
+        <h1 class="mt-6 text-2xl sm:text-4xl md:text-6xl font-bold tracking-tight text-slate-900 flex flex-col items-center justify-center">
+          <span>From Space to Soil,</span>
+          <span class="relative block overflow-hidden w-full h-16 sm:h-20 mt-1 sm:mt-2 text-wrap">
+            <span class="word-slide absolute inset-x-0 mx-auto opacity-100 translate-y-0 bg-clip-text text-transparent px-2" style="background-image: var(--gradient-hero);">
+              Viksit Bharat's Viksit Agriculture.
+            </span>
+            <span class="word-slide absolute inset-x-0 mx-auto opacity-0 translate-y-[100%] bg-clip-text text-transparent px-2" style="background-image: var(--gradient-hero);">
+              Vriddhi 2.0
+            </span>
+          </span>
+        </h1>
+        
+        <p class="mx-auto mt-5 max-w-2xl text-base text-slate-500 sm:text-lg px-2">
+          Scroll the stream below. Watch the lifecycle of a digital farm flow from satellite to sprayer to carbon credit.
+        </p>
+        <div class="mt-8 flex flex-wrap justify-center gap-3">
+          <button
+            onclick="scrollToSection(0)"
+            class="rounded-full bg-emerald-600 px-6 py-3 text-sm font-medium text-white shadow-md hover:opacity-90 transition-all"
+          >
+            Begin the stream
+          </button>
+          <a
+            href="/dashboard"
+            class="rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-all"
+          >
+            Skip to app
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="relative mx-auto max-w-6xl px-4 pb-32 sm:px-6">
+      
+      <div class="pointer-events-none absolute left-1/2 top-0 hidden h-full w-1 -translate-x-1/2 overflow-hidden rounded-full md:block">
+        <div
+          class="absolute inset-0 animate-stream"
+          style="background: repeating-linear-gradient(180deg, oklch(0.75 0.12 230) 0 20px, oklch(0.55 0.16 145) 20px 40px);"
+        ></div>
+      </div>
+
+      <div data-idx="0" class="step-section relative grid min-h-[70vh] grid-cols-1 items-center gap-8 py-12 md:grid-cols-2">
+        <div class="absolute left-1/2 top-1/2 z-10 hidden -translate-x-1/2 -translate-y-1/2 md:block">
+          <div class="node-icon flex h-12 w-12 items-center justify-center rounded-full border-2 border-white bg-emerald-600 text-white shadow-md transition-transform duration-300">
+            <i data-lucide="map-pin" class="h-5 w-5"></i>
+          </div>
+        </div>
+        <div class="md:pr-16">
+          <div class="text-xs font-bold uppercase tracking-widest text-emerald-600">Step 01 · The Source</div>
+          <h2 class="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl text-slate-900">AOI Selection</h2>
+          <p class="mt-4 text-slate-500 font-normal">Open the map, draw a custom polygon over your farm's Area of Interest, and press Launch. Your coordinates begin the stream.</p>
+          
+          <div class="mt-6 flex flex-wrap items-center gap-3">
+            <button onclick="scrollToSection(1)" class="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-bold text-white hover:opacity-90 transition-all shadow-sm">
+              Next <i data-lucide="arrow-right" class="h-4 w-4"></i>
+            </button>
+
+            <button onclick="playVoiceover('1st.mp3', this)" class="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-sm font-bold text-slate-700 backdrop-blur-sm shadow-sm hover:bg-slate-50 hover:text-emerald-600 transition-all active:scale-95" aria-label="Listen to audio overview">
+              <i data-lucide="volume-10" class="h-4 w-4 audio-icon"></i> <span class="audio-text">Listen</span>
+            </button>
+          </div>
+        </div>
+        <div class="md:order-2 md:pl-16">
+          <div class="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div class="absolute inset-0" style="background: linear-gradient(135deg, oklch(0.92 0.05 130), oklch(0.85 0.07 95));"></div>
+            <svg viewBox="0 0 400 300" class="absolute inset-0 h-full w-full">
+              <defs>
+                <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                  <path d="M20 0 L0 0 0 20" fill="none" stroke="oklch(0.55 0.16 145 / 0.2)" stroke-width="0.5" />
+                </pattern>
+              </defs>
+              <rect width="400" height="300" fill="url(#grid)" />
+              <polygon
+                id="map-polygon"
+                points="90,80 280,60 320,180 200,240 80,200"
+                fill="oklch(0.55 0.16 145 / 0.25)"
+                stroke="oklch(0.42 0.12 150)"
+                stroke-width="2"
+                stroke-dasharray="6 4"
+              />
+              <circle cx="90" cy="80" r="5" fill="oklch(0.42 0.12 150)" />
+              <circle cx="280" cy="60" r="5" fill="oklch(0.42 0.12 150)" />
+              <circle cx="320" cy="180" r="5" fill="oklch(0.42 0.12 150)" />
+              <circle cx="200" cy="240" r="5" fill="oklch(0.42 0.12 150)" />
+              <circle cx="80" cy="200" r="5" fill="oklch(0.42 0.12 150)" />
+            </svg>
+            <div class="absolute bottom-3 left-3 rounded-md bg-white/80 px-2 py-1 text-xs font-medium backdrop-blur">AOI · 12.4 ha</div>
+          </div>
+        </div>
+      </div>
+
+      <div data-idx="1" class="step-section relative grid min-h-[70vh] grid-cols-1 items-center gap-8 py-12 md:grid-cols-2">
+        <div class="absolute left-1/2 top-1/2 z-10 hidden -translate-x-1/2 -translate-y-1/2 md:block">
+          <div class="node-icon flex h-12 w-12 items-center justify-center rounded-full border-2 border-white bg-emerald-600 text-white shadow-md transition-transform duration-300">
+            <i data-lucide="satellite" class="h-5 w-5"></i>
+          </div>
+        </div>
+        <div class="md:order-2 md:pl-16">
+          <div class="text-xs font-semibold uppercase tracking-widest text-emerald-600">Step 02 · The Descent</div>
+          <h2 class="mt-2 text-3xl font-bold tracking-tight sm:text-4xl text-slate-900">Dual Scanning Pipeline</h2>
+          <p class="mt-4 text-slate-500">An orbital satellite and a deployed field UAV sync in real time, triangulating every infected crop patch down to sub-meter precision.</p>
+          <div class="mt-6 flex gap-2">
+            <button onclick="scrollToSection(2)" class="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity">
+              Next <i data-lucide="arrow-right" class="h-4 w-4"></i>
+            </button>
+            <button onclick="playVoiceover('2nd.mp3', this)" class="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-sm font-bold text-slate-700 backdrop-blur-sm shadow-sm hover:bg-slate-50 hover:text-emerald-600 transition-all active:scale-95" aria-label="Listen to audio overview">
+              <i data-lucide="volume-10" class="h-4 w-4 audio-icon"></i> <span class="audio-text">Listen</span>
+            </button>
+          </div>
+        </div>
+        <div class="md:pr-16">
+          <div class="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-slate-200 shadow-sm" style="background: linear-gradient(180deg, oklch(0.85 0.08 230), oklch(0.92 0.05 130));">
+            <svg viewBox="0 0 400 300" class="absolute inset-0 h-full w-full">
+              <circle cx="80" cy="60" r="18" fill="oklch(0.3 0.05 230)" />
+              <rect x="62" y="55" width="36" height="4" fill="oklch(0.7 0.13 220)" />
+              <line x1="80" y1="78" x2="200" y2="220" stroke="oklch(0.7 0.13 220)" stroke-width="2" stroke-dasharray="4 4">
+                <animate attributeName="stroke-dashoffset" from="0" to="16" dur="0.8s" repeatCount="indefinite" />
+              </line>
+              <line x1="330" y1="100" x2="200" y2="220" stroke="oklch(0.55 0.16 145)" stroke-width="2" stroke-dasharray="4 4">
+                <animate attributeName="stroke-dashoffset" from="0" to="16" dur="0.8s" repeatCount="indefinite" />
+              </line>
+              <g transform="translate(310,90)">
+                <rect x="0" y="0" width="40" height="12" rx="2" fill="oklch(0.3 0.04 150)" />
+                <circle cx="6" cy="6" r="6" fill="oklch(0.5 0.05 150)" />
+                <circle cx="34" cy="6" r="6" fill="oklch(0.5 0.05 150)" />
+              </g>
+              <ellipse cx="200" cy="240" rx="120" ry="20" fill="oklch(0.55 0.16 145 / 0.4)" />
+            </svg>
+            <div class="absolute right-3 top-3 rounded-md bg-white/80 px-2 py-1 text-xs font-medium backdrop-blur">Sync · 99.6%</div>
+          </div>
+        </div>
+      </div>
+
+      <div data-idx="2" class="step-section relative grid min-h-[70vh] grid-cols-1 items-center gap-8 py-12 md:grid-cols-2">
+        <div class="absolute left-1/2 top-1/2 z-10 hidden -translate-x-1/2 -translate-y-1/2 md:block">
+          <div class="node-icon flex h-12 w-12 items-center justify-center rounded-full border-2 border-white bg-emerald-600 text-white shadow-md transition-transform duration-300">
+            <i data-lucide="plane" class="h-5 w-5"></i>
+          </div>
+        </div>
+        <div class="md:pr-16">
+          <div class="text-xs font-semibold uppercase tracking-widest text-emerald-600">Step 03 · The Flow</div>
+          <h2 class="mt-2 text-3xl font-bold tracking-tight sm:text-4xl text-slate-900">Anomaly Mapping & Remediation</h2>
+          <p class="mt-4 text-slate-500">Anomalies surface on your dashboard. Choose a manual localized spray, or let an autonomous UAV precision-spray the targeted sector.</p>
+          <div class="mt-6 flex gap-2">
+            <button onclick="scrollToSection(3)" class="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:opacity-90 transition-opacity">
+              Next <i data-lucide="arrow-right" class="h-4 w-4"></i>
+            </button>
+            <button onclick="playVoiceover('3rd.mp3', this)" class="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-sm font-bold text-slate-700 backdrop-blur-sm shadow-sm hover:bg-slate-50 hover:text-emerald-600 transition-all active:scale-95" aria-label="Listen to audio overview">
+              <i data-lucide="volume-10" class="h-4 w-4 audio-icon"></i> <span class="audio-text">Listen</span>
+            </button>
+          </div>
+        </div>
+        <div class="md:order-2 md:pl-16">
+          <div class="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-slate-200 shadow-sm" style="background: linear-gradient(135deg, oklch(0.9 0.05 130), oklch(0.88 0.08 80));">
+            <svg viewBox="0 0 400 300" class="absolute inset-0 h-full w-full">
+              <rect x="40" y="40" width="320" height="220" fill="oklch(0.55 0.16 145 / 0.15)" stroke="oklch(0.42 0.12 150)" stroke-width="1.5" rx="8" />
+              <g>
+                <circle cx="110" cy="90" r="18" fill="oklch(0.65 0.22 30 / 0.5)">
+                  <animate attributeName="r" values="18;22;18" dur="2s" repeatCount="indefinite" />
+                </circle>
+                <circle cx="110" cy="90" r="3" fill="oklch(0.5 0.22 30)" />
+              </g>
+              <g>
+                <circle cx="230" cy="110" r="12" fill="oklch(0.65 0.22 30 / 0.5)">
+                  <animate attributeName="r" values="12;16;12" dur="2s" repeatCount="indefinite" />
+                </circle>
+                <circle cx="230" cy="110" r="3" fill="oklch(0.5 0.22 30)" />
+              </g>
+              <g>
+                <circle cx="170" cy="200" r="22" fill="oklch(0.65 0.22 30 / 0.5)">
+                  <animate attributeName="r" values="22;26;22" dur="2s" repeatCount="indefinite" />
+                </circle>
+                <circle cx="170" cy="200" r="3" fill="oklch(0.5 0.22 30)" />
+              </g>
+              <g>
+                <circle cx="290" cy="210" r="10" fill="oklch(0.65 0.22 30 / 0.5)">
+                  <animate attributeName="r" values="10;14;10" dur="2s" repeatCount="indefinite" />
+                </circle>
+                <circle cx="290" cy="210" r="3" fill="oklch(0.5 0.22 30)" />
+              </g>
+            </svg>
+            <div class="absolute bottom-3 left-3 rounded-md bg-white/80 px-2 py-1 text-xs font-medium backdrop-blur">4 anomalies detected</div>
+          </div>
+        </div>
+      </div>
+
+      <div data-idx="3" class="step-section relative grid min-h-[70vh] grid-cols-1 items-center gap-8 py-12 md:grid-cols-2">
+        <div class="absolute left-1/2 top-1/2 z-10 hidden -translate-x-1/2 -translate-y-1/2 md:block">
+          <div class="node-icon flex h-12 w-12 items-center justify-center rounded-full border-2 border-white bg-emerald-600 text-white shadow-md transition-transform duration-300">
+            <i data-lucide="sparkles" class="h-5 w-5"></i>
+          </div>
+        </div>
+        <div class="md:order-2 md:pl-16">
+  <div class="text-xs font-semibold uppercase tracking-widest text-emerald-600">Step 04 · The Yield</div>
+  <h2 class="mt-2 text-3xl font-bold tracking-tight sm:text-4xl text-slate-900">Carbon Credit Incentive</h2>
+  <p class="mt-4 text-slate-500">Clear anomalies within 10 days and your counter climbs — verifiable carbon credits unlock discounts across the Vriddhi marketplace.</p>
+  
+          <!-- Grouped Button Tray -->
+          <div class="mt-6 flex flex-wrap items-center gap-3">
+            <!-- Main Call to Action Button -->
+            <a href="/dashboard" class="inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium text-white shadow-md hover:opacity-95 transition-opacity" style="background: var(--gradient-hero);">
+              Enter App <i data-lucide="arrow-right" class="h-4 w-4"></i>
+            </a>
+          
+            <!-- Step 4 Audio Control Button -->
+            <button onclick="playVoiceover('4th.mp3', this)" class="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white/80 px-4 py-2.5 text-sm font-bold text-slate-700 backdrop-blur-sm shadow-sm hover:bg-slate-50 hover:text-emerald-600 transition-all active:scale-95" aria-label="Listen to step four audio overview">
+              <i data-lucide="volume-2" class="h-4 w-4 audio-icon"></i> <span class="audio-text">Listen</span>
+            </button>
+          </div>
+
+        </div>
+        <div class="md:pr-16">
+          <div class="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-slate-200 shadow-sm" style="background: linear-gradient(135deg, oklch(0.5 0.16 145), oklch(0.42 0.12 150));">
+            <div class="absolute inset-0 flex flex-col items-center justify-center text-white">
+              <i data-lucide="sparkles" class="h-10 w-10"></i>
+              <div class="mt-3 text-5xl font-bold">+120</div>
+              <div class="text-sm opacity-80">Carbon credits this season</div>
+              <div class="mt-3 h-2 w-3/5 overflow-hidden rounded-full bg-white/20">
+                <div class="h-full w-3/4 rounded-full bg-white"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <footer class="flex flex-col items-center justify-around w-full py-16 text-sm bg-slate-50 text-gray-800/70 border-t border-slate-200 relative z-10 backdrop-blur-sm">
+    <div class="flex flex-col items-center max-w-md px-4">
+      
+      <div class="w-[157px] h-[100px] mb-2 flex items-center justify-center overflow-hidden rounded-md">
+        <img 
+          src="logo.png" 
+          alt="Vriddhi 2.0 Logo" 
+          class="h-full w-auto object-contain"
+        />
+      </div>
+      
+      <p class="mt-4 text-center text-slate-500 max-w-md leading-relaxed font-normal">
+        Copyright © 2026 <a href="https://vriddhidigitalfarms.com" class="text-slate-900 font-medium hover:text-emerald-600 transition-colors">Vriddhi 2.0 Digital Farms</a>. All rights reserved.
+      </p>
+
+      <div class="flex items-center gap-4 mt-6 text-xs md:text-sm font-semibold text-slate-600">
+        <a href="#" class="hover:text-emerald-600 transition-colors">Brand Guidelines</a>
+        <div class="h-4 w-px bg-slate-200"></div>
+        <a href="#" class="hover:text-emerald-600 transition-colors">Trademark Policy</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    lucide.createIcons();
+
+    const sections = document.querySelectorAll('.step-section');
+    const nodes = document.querySelectorAll('.node-icon');
+    const mapPolygon = document.getElementById('map-polygon');
+    const mobileMenu = document.getElementById('mobile-menu');
+
+    function scrollToSection(index) {
+      if (sections[index]) {
+        sections[index].scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+
+    function toggleMobileMenu(open) {
+      if (open) {
+        mobileMenu.classList.remove('translate-x-full', 'opacity-0', 'pointer-events-none');
+      } else {
+        mobileMenu.classList.add('translate-x-full', 'opacity-0', 'pointer-events-none');
+      }
+    }
+
+    // Fixed Word Rotator Engine Layout for Wrapping Text Strings
+    function initWordRotator() {
+      const slides = document.querySelectorAll('.word-slide');
+      let currentIdx = 0;
+
+      setInterval(() => {
+        const nextIdx = (currentIdx + 1) % slides.length;
+
+        // Animate out current word
+        slides[currentIdx].style.opacity = '0';
+        slides[currentIdx].style.transform = 'translateY(-100%)';
+
+        // Animate in next word
+        slides[nextIdx].style.opacity = '1';
+        slides[nextIdx].style.transform = 'translateY(0)';
+
+        // Prepare index track loop orientation positions
+        setTimeout(((prevIdx) => {
+          return () => {
+            if (currentIdx !== prevIdx) {
+              slides[prevIdx].style.transform = 'translateY(100%)';
+            }
+          };
+        })(currentIdx), 600);
+
+        currentIdx = nextIdx;
+      }, 2000);
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const activeIndex = parseInt(entry.target.getAttribute('data-idx'), 10);
+          
+          nodes.forEach((node, i) => {
+            if (i === activeIndex) {
+              node.classList.add('scale-125');
+            } else {
+              node.classList.remove('scale-125');
+            }
+          });
+
+          if (activeIndex === 0) {
+            mapPolygon.setAttribute('stroke-dasharray', '0');
+          } else {
+            mapPolygon.setAttribute('stroke-dasharray', '6 4');
+          }
+        }
+      });
+    }, { threshold: 0.55 });
+
+    sections.forEach((section) => observer.observe(section));
+
+    function initGlobalAmbientBackground() {
+      const targetLayer = document.getElementById('ambient-backdrop');
+      if (!targetLayer) return;
+
+      const themeColors = ["#3B82F6", "#34D399", "#F59E0B", "#A78BFA", "#EC4899"];
+      const viewSize = Math.max(window.innerWidth, window.innerHeight);
+
+      themeColors.forEach(color => {
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("class", "absolute animate-background-gradient");
+        
+        svg.style.top = `${Math.random() * 40 + 10}%`;
+        svg.style.left = `${Math.random() * 40 + 10}%`;
+        svg.style.setProperty("--background-gradient-speed", `${20 + Math.random() * 15}s`);
+        
+        svg.style.setProperty("--tx-1", Math.random() - 0.5);
+        svg.style.setProperty("--ty-1", Math.random() - 0.5);
+        svg.style.setProperty("--tx-2", Math.random() - 0.5);
+        svg.style.setProperty("--ty-2", Math.random() - 0.5);
+        svg.style.setProperty("--tx-3", Math.random() - 0.5);
+        svg.style.setProperty("--ty-3", Math.random() - 0.5);
+        svg.style.setProperty("--tx-4", Math.random() - 0.5);
+        svg.style.setProperty("--ty-4", Math.random() - 0.5);
+        
+        const responsiveScale = 0.7 + Math.random() * 0.8;
+        svg.setAttribute("width", viewSize * responsiveScale);
+        svg.setAttribute("height", viewSize * responsiveScale);
+        svg.setAttribute("viewBox", "0 0 100 100");
+        
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("cx", "50");
+        circle.setAttribute("cy", "50");
+        circle.setAttribute("r", "50");
+        circle.setAttribute("fill", color);
+        
+        svg.appendChild(circle);
+        targetLayer.appendChild(svg);
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initGlobalAmbientBackground();
+      initWordRotator();
+    });
+
+    // Global state pointer to track the currently playing track
+let currentAudio = null;
+let currentAudioButton = null;
+
+function playVoiceover(audioFilePath, buttonElement) {
+  const icon = buttonElement.querySelector('.audio-icon');
+  const text = buttonElement.querySelector('.audio-text');
+
+  // Case 1: If the EXACT same audio is clicked while playing -> Pause it
+  if (currentAudio && currentAudio.src.includes(audioFilePath)) {
+    if (!currentAudio.paused) {
+      currentAudio.pause();
+      text.innerText = "Listen";
+      icon.setAttribute('data-lucide', 'volume-2');
+    } else {
+      currentAudio.play();
+      text.innerText = "Playing";
+      icon.setAttribute('data-lucide', 'pause');
+    }
+    lucide.createIcons(); // Force refresh the visual icons
+    return;
+  }
+
+  // Case 2: If a completely different audio was playing elsewhere -> Reset old button first
+  if (currentAudio) {
+    currentAudio.pause();
+    if (currentAudioButton) {
+      currentAudioButton.querySelector('.audio-text').innerText = "Listen";
+      currentAudioButton.querySelector('.audio-icon').setAttribute('data-lucide', 'volume-2');
+    }
+  }
+
+  // Case 3: Instantiate and load the new sound file layer
+  currentAudio = new Audio(audioFilePath);
+  currentAudioButton = buttonElement;
+
+  // Change UI to loading/playing state
+  text.innerText = "Playing";
+  icon.setAttribute('data-lucide', 'pause');
+  lucide.createIcons();
+
+  // Play the loaded track
+  currentAudio.play().catch(error => {
+    console.error("Audio playback blocked or failed:", error);
+    text.innerText = "Listen";
+    icon.setAttribute('data-lucide', 'volume-2');
+    lucide.createIcons();
+  });
+
+  // Track termination -> Reset button state gracefully when audio finishes organically
+  currentAudio.onended = function() {
+    text.innerText = "Listen";
+    icon.setAttribute('data-lucide', 'volume-2');
+    lucide.createIcons();
+    currentAudio = null;
+    currentAudioButton = null;
+  };
+}
+  </script>
+  <script src="/auth.js"></script>
+</body>
+</html>

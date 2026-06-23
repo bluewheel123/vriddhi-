@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vriddhi 2.0 — Crop Insurance Claim</title>
+  <meta name="description" content="File an insurance claim for crop loss on Vriddhi 2.0. Submit field details, timelines, and damage assessments.">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+    
+    :root {
+      --gradient-hero: linear-gradient(135deg, #2563eb, #16a34a);
+      --shadow-soft: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+      --border: oklch(0.92 0.01 0);
+      --card: #ffffff;
+      --primary: oklch(0.55 0.16 145);
+      --primary-foreground: #ffffff;
+      --muted-foreground: oklch(0.55 0.01 0);
+      --background: #ffffff;
+    }
+
+    * {
+      font-family: 'Poppins', sans-serif;
+    }
+
+    @keyframes background-gradient {
+      0%, 100% { transform: translate(0, 0); }
+      20% { transform: translate(calc(30vw * var(--tx-1, 1)), calc(30vh * var(--ty-1, 1))); }
+      40% { transform: translate(calc(30vw * var(--tx-2, -1)), calc(30vh * var(--ty-2, 1))); }
+      60% { transform: translate(calc(30vw * var(--tx-3, 1)), calc(30vh * var(--ty-3, -1))); }
+      80% { transform: translate(calc(30vw * var(--tx-4, -1)), calc(30vh * var(--ty-4, -1))); }
+    }
+
+    .animate-background-gradient {
+      animation: background-gradient var(--background-gradient-speed, 25s) cubic-bezier(0.445, 0.05, 0.55, 0.95) infinite;
+    }
+
+    .mobile-menu-overlay {
+      transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1), opacity 300ms ease;
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(226, 232, 240, 0.8);
+    }
+  </style>
+</head>
+<body class="bg-white text-slate-900 antialiased relative min-h-screen selection:bg-emerald-100 pb-16">
+
+  <!-- Ambient Backdrop Circles -->
+  <div id="ambient-backdrop" class="fixed inset-0 -z-20 overflow-hidden pointer-events-none w-full h-full blur-[110px] opacity-45"></div>
+
+  <!-- Glassmorphic Header / Navigation -->
+  <header class="flex justify-center w-full py-6 px-4 sticky top-0 z-50">
+    <div class="flex items-center justify-between px-6 py-3 bg-white/80 rounded-full shadow-lg border border-slate-200/50 backdrop-blur-md w-full max-w-4xl relative z-10">
+      
+      <div class="flex items-center">
+        <a href="/" class="w-8 h-8 mr-6 transition-transform duration-300 hover:rotate-[10deg] cursor-pointer rounded-full overflow-hidden border border-slate-200 shadow-sm flex items-center justify-center bg-slate-50">
+          <img src="logo.png" alt="Vriddhi Logo" class="w-full h-full object-cover" />
+        </a>
+      </div>
+      
+      <nav class="hidden md:flex items-center space-x-6">
+        <a href="/" class="text-sm text-gray-700 hover:text-emerald-600 font-medium transition-colors hover:scale-105 transform inline-block duration-200">Home</a>
+        <a href="/dashboard" class="text-sm text-gray-700 hover:text-emerald-600 font-medium transition-colors hover:scale-105 transform inline-block duration-200">Dashboard</a>
+        <a href="/marketplace" class="text-sm text-gray-700 hover:text-emerald-600 font-medium transition-colors hover:scale-105 transform inline-block duration-200">Marketplace</a>
+        <a href="/insurance-claim" class="text-sm text-emerald-600 font-semibold transition-colors hover:scale-105 transform inline-block duration-200">Insurance Claim</a>
+        <button id="nav-login-btn" class="text-sm text-gray-700 hover:text-emerald-600 font-medium transition-colors hover:scale-105 transform inline-block duration-200">Signin / Login</button>
+      </nav>
+
+      <!-- Credits Counter Widget -->
+      <div class="flex items-center space-x-3">
+        <div class="flex items-center bg-amber-50 border border-amber-200/60 px-4 py-1.5 rounded-full shadow-sm">
+          <i data-lucide="coins" class="h-4.5 w-4.5 text-amber-500 mr-2"></i>
+          <span class="text-sm font-bold text-amber-700" id="global-credits-tally">...</span>
+          <span class="text-xs text-amber-600/80 font-medium ml-1 hidden sm:inline">Credits</span>
+        </div>
+        
+        <button class="md:hidden flex items-center active:scale-90 transition-transform duration-100" onclick="toggleMobileMenu(true)" aria-label="Open menu">
+          <i data-lucide="menu" class="h-6 w-6 text-gray-900"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="fixed inset-0 bg-white z-50 pt-24 px-6 md:hidden mobile-menu-overlay translate-x-full opacity-0 pointer-events-none">
+      <button class="absolute top-6 right-6 p-2 active:scale-90 transition-transform duration-100" onclick="toggleMobileMenu(false)" aria-label="Close menu">
+        <i data-lucide="x" class="h-6 w-6 text-gray-900"></i>
+      </button>
+      
+      <div class="flex flex-col space-y-6 text-center pt-8">
+        <a href="/" class="text-xl text-gray-900 font-semibold hover:text-emerald-600 transition-colors" onclick="toggleMobileMenu(false)">Home</a>
+        <a href="/dashboard" class="text-xl text-gray-900 font-semibold hover:text-emerald-600 transition-colors" onclick="toggleMobileMenu(false)">Dashboard</a>
+        <a href="/marketplace" class="text-xl text-gray-900 font-semibold hover:text-emerald-600 transition-colors" onclick="toggleMobileMenu(false)">Marketplace</a>
+        <a href="/insurance-claim" class="text-xl text-emerald-600 font-semibold transition-colors" onclick="toggleMobileMenu(false)">Insurance Claim</a>
+        <button id="nav-login-mobile-btn" class="text-xl text-gray-900 font-semibold hover:text-emerald-600 transition-colors">
+          Signin / Login
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-4xl mx-auto px-4 sm:px-6 pt-8 relative z-10">
+    
+    <!-- Title Area -->
+    <div class="text-center max-w-2xl mx-auto mb-10">
+      <span class="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50/50 px-3 py-1 text-xs font-semibold text-emerald-700 shadow-sm mb-3">
+        <i data-lucide="shield-alert" class="h-3.5 w-3.5"></i> Crop Loss Remediation Claims
+      </span>
+      <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900">
+        Insurance Claim Portal
+      </h1>
+      <p class="mt-2 text-sm text-slate-500">
+        Dedicated compensation filings for farmers who experienced persistent crop anomalies exceeding the 10-day recovery deadline and lost the majority of crop yield.
+      </p>
+    </div>
+
+    <!-- Claim Registration Form -->
+    <div class="glass-card rounded-3xl p-8 md:p-10 shadow-xl border border-slate-200 max-w-2xl mx-auto">
+      <form id="insurance-claim-form" onsubmit="submitInsuranceClaim(event)" class="space-y-6">
+        
+        <!-- Section: Farmer Profiles (Auto-prefilled) -->
+        <div>
+          <h3 class="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2 mb-4 flex items-center gap-2 uppercase tracking-wider">
+            <i data-lucide="user-check" class="h-4.5 w-4.5 text-emerald-600"></i> Farmer Identification
+          </h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Farmer ID</label>
+              <input type="text" name="farmer_id" value="101" readonly class="w-full px-4 py-2.5 bg-slate-100/80 border border-slate-200 rounded-xl text-sm font-semibold text-slate-500 cursor-not-allowed outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Full Name</label>
+              <input type="text" name="farmer_name" value="anchu" readonly class="w-full px-4 py-2.5 bg-slate-100/80 border border-slate-200 rounded-xl text-sm font-semibold text-slate-500 cursor-not-allowed outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Email Address</label>
+              <input type="email" id="farmer-email" readonly class="w-full px-4 py-2.5 bg-slate-100/80 border border-slate-200 rounded-xl text-sm font-semibold text-slate-500 cursor-not-allowed outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Phone Number</label>
+              <input type="tel" id="farmer-phone" readonly class="w-full px-4 py-2.5 bg-slate-100/80 border border-slate-200 rounded-xl text-sm font-semibold text-slate-500 cursor-not-allowed outline-none">
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Address</label>
+              <input type="text" id="farmer-address" readonly class="w-full px-4 py-2.5 bg-slate-100/80 border border-slate-200 rounded-xl text-sm font-semibold text-slate-500 cursor-not-allowed outline-none">
+            </div>
+          </div>
+        </div>
+
+        <!-- Section: Field Details -->
+        <div>
+          <h3 class="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2 mb-4 flex items-center gap-2 uppercase tracking-wider">
+            <i data-lucide="map-pinned" class="h-4.5 w-4.5 text-emerald-600"></i> Field & Telemetry Specifications
+          </h3>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="sm:col-span-3">
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Location Coordinates / Plot Name</label>
+              <input type="text" name="field_details" id="field-details" required placeholder="e.g. Block-A (26.14°N, 91.73°E)" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Area of Interest (Hectares)</label>
+              <input type="number" step="0.01" name="area_hectares" id="area-hectares" required placeholder="e.g. 1.25" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Crop Type</label>
+              <select name="crop_type" required class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+                <option value="Rice">Rice (Kharif)</option>
+                <option value="Maize">Maize</option>
+                <option value="Wheat">Wheat</option>
+                <option value="Jute">Jute</option>
+                <option value="Tea">Tea</option>
+                <option value="Vegetables">Vegetables</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section: Timeline Assessment -->
+        <div>
+          <h3 class="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2 mb-4 flex items-center gap-2 uppercase tracking-wider">
+            <i data-lucide="calendar" class="h-4.5 w-4.5 text-emerald-600"></i> Monitoring Interruption Timeline
+          </h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Unresolved Date Range / Timeline</label>
+              <input type="text" name="timeline" required placeholder="e.g. May 10 - June 15 (36 Days)" class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Satellite Scan Reference Date</label>
+              <input type="date" name="scan_reference_date" required class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+            </div>
+          </div>
+          <span class="text-[10px] text-slate-400 mt-2 block font-normal leading-relaxed">
+            Note: Claims are only valid for plots where crop stress remediation deadlines (10 days) were exceeded, resulting in permanent telemetry expire status.
+          </span>
+        </div>
+
+        <!-- Section: Damage Assessment -->
+        <div>
+          <h3 class="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2 mb-4 flex items-center gap-2 uppercase tracking-wider">
+            <i data-lucide="activity" class="h-4.5 w-4.5 text-emerald-600"></i> Damage Assessment & Description
+          </h3>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Damage Description & Cause of Loss</label>
+            <textarea name="damage_assessment" rows="3" required placeholder="Provide a detailed breakdown of factors preventing crop recovery (e.g., severe flood water inundation, pest outbreak, delay in bio-medicine spray)." class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none"></textarea>
+          </div>
+        </div>
+
+        <!-- Section: Loss Percentage (Interactive Slider 50% - 100%) -->
+        <div>
+          <h3 class="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2 mb-4 flex items-center gap-2 uppercase tracking-wider">
+            <i data-lucide="percent" class="h-4.5 w-4.5 text-emerald-600"></i> Crop Loss Estimate
+          </h3>
+          
+          <div class="bg-slate-50 border border-slate-150 p-6 rounded-2xl">
+            <div class="flex justify-between items-center mb-4">
+              <span class="text-xs font-bold text-slate-600 uppercase tracking-wide">Assessed Yield Loss</span>
+              <span class="text-2xl font-extrabold text-amber-500" id="loss-percentage-display">75%</span>
+            </div>
+            
+            <input type="range" name="loss_percentage" min="50" max="100" value="75" oninput="updateLossSlider(this.value)" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500">
+            
+            <!-- Severity Indicator Badge -->
+            <div class="mt-4 flex items-center justify-center p-3.5 rounded-xl border transition-all duration-300 bg-amber-50 border-amber-200 text-amber-700 text-xs font-semibold text-center" id="severity-badge">
+              <i data-lucide="alert-triangle" class="h-4 w-4 mr-2 animate-pulse" id="severity-icon"></i>
+              <span id="severity-text">Severe Damage Severity (Compensation tier: 2)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="w-full bg-slate-900 hover:bg-emerald-600 text-white font-bold py-3.5 rounded-2xl text-sm shadow-md transition-all active:scale-[0.99] flex items-center justify-center gap-2">
+          <i data-lucide="shield-check" class="h-4.5 w-4.5"></i> Submit Compensation Claim
+        </button>
+
+      </form>
+    </div>
+  </main>
+
+  <!-- SUCCESS NOTIFICATION MODAL -->
+  <div id="success-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm hidden">
+    <div class="bg-white rounded-3xl p-8 border border-slate-200 shadow-2xl max-w-md w-full mx-4 text-center transform scale-95 transition-all">
+      <div class="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-4 shadow-inner">
+        <i data-lucide="badge-check" class="h-8 w-8"></i>
+      </div>
+      <h3 class="text-2xl font-extrabold text-slate-900">Claim Registered</h3>
+      <p class="text-xs text-slate-400 mt-2">
+        Your crop insurance compensation request has been written successfully to our MongoDB cloud telemetry network.
+      </p>
+
+      <div class="bg-slate-50 border border-slate-250 p-4 rounded-2xl my-6 text-left space-y-2">
+        <div class="flex justify-between text-xs">
+          <span class="text-slate-400 font-semibold">Reference ID:</span>
+          <span class="text-slate-800 font-bold font-mono" id="modal-claim-id">claim-xxxx</span>
+        </div>
+        <div class="flex justify-between text-xs">
+          <span class="text-slate-400 font-semibold">Initial Status:</span>
+          <span class="text-emerald-600 font-bold flex items-center gap-1 uppercase tracking-wider text-[9px]">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span> pending verification
+          </span>
+        </div>
+        <div class="flex justify-between text-xs">
+          <span class="text-slate-400 font-semibold">Verification Target:</span>
+          <span class="text-slate-800 font-semibold">Within 5-7 business days</span>
+        </div>
+      </div>
+
+      <div class="flex gap-3">
+        <a href="/dashboard" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-3 rounded-xl text-xs transition-colors">
+          Go to Dashboard
+        </a>
+        <button onclick="closeSuccessModal()" class="flex-1 bg-slate-950 hover:bg-emerald-600 text-white font-bold py-3 rounded-xl text-xs transition-colors shadow-sm">
+          File Another Claim
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize Icons
+    lucide.createIcons();
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initGlobalAmbientBackground();
+      updateLossSlider(75); // Set initial state of severity warning
+
+      // Prefill Area of Interest from localStorage if available
+      const savedArea = localStorage.getItem('selected_area_hectares');
+      if (savedArea) {
+        const areaInput = document.getElementById('area-hectares');
+        if (areaInput) {
+          areaInput.value = savedArea;
+        }
+      }
+
+      // Prefill Coordinates from localStorage if available
+      const savedCoords = localStorage.getItem('selected_area_coordinates');
+      if (savedCoords) {
+        const coordsInput = document.getElementById('field-details');
+        if (coordsInput) {
+          coordsInput.value = savedCoords;
+        }
+      }
+
+      // Fetch credits tally asynchronously
+      fetch('/api/farmer-stats')
+        .then(res => res.json())
+        .then(data => {
+          if (data && typeof data.credit_points === 'number') {
+            document.getElementById('global-credits-tally').innerText = data.credit_points;
+          }
+        })
+        .catch(err => console.warn("Failed to fetch score stats:", err));
+    });
+
+    // Mobile Navigation Drawer Toggle
+    const mobileMenu = document.getElementById('mobile-menu');
+    function toggleMobileMenu(open) {
+      if (open) {
+        mobileMenu.classList.remove('translate-x-full', 'opacity-0', 'pointer-events-none');
+      } else {
+        mobileMenu.classList.add('translate-x-full', 'opacity-0', 'pointer-events-none');
+      }
+    }
+
+    // Dynamic slider handler
+    function updateLossSlider(val) {
+      const display = document.getElementById('loss-percentage-display');
+      const badge = document.getElementById('severity-badge');
+      const text = document.getElementById('severity-text');
+      const icon = document.getElementById('severity-icon');
+      
+      display.innerText = `${val}%`;
+
+      // Remove existing color classes
+      badge.classList.remove(
+        'bg-yellow-50', 'border-yellow-200', 'text-yellow-700',
+        'bg-amber-50', 'border-amber-200', 'text-amber-700',
+        'bg-red-50', 'border-red-200', 'text-red-700'
+      );
+
+      const valNum = parseInt(val);
+      if (valNum <= 65) {
+        // Moderate (50% - 65%)
+        badge.classList.add('bg-yellow-50', 'border-yellow-200', 'text-yellow-700');
+        text.innerText = "Moderate Damage Severity (Compensation tier: 1)";
+        icon.setAttribute('data-lucide', 'alert-circle');
+      } else if (valNum <= 85) {
+        // Severe (66% - 85%)
+        badge.classList.add('bg-amber-50', 'border-amber-200', 'text-amber-700');
+        text.innerText = "Severe Damage Severity (Compensation tier: 2)";
+        icon.setAttribute('data-lucide', 'alert-triangle');
+      } else {
+        // Catastrophic (86% - 100%)
+        badge.classList.add('bg-red-50', 'border-red-200', 'text-red-700');
+        text.innerText = "Catastrophic Yield Destruction (Compensation tier: 3 - Priority scan)";
+        icon.setAttribute('data-lucide', 'bomb');
+      }
+      lucide.createIcons();
+    }
+
+    // Async submit handler
+    function submitInsuranceClaim(event) {
+      event.preventDefault();
+      
+      const form = document.getElementById('insurance-claim-form');
+      const formData = new FormData(form);
+      const data = {};
+      formData.forEach((value, key) => data[key] = value);
+
+      // Submit via fetch as JSON
+      fetch('/insurance-claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      .then(res => res.json())
+      .then(result => {
+        if (result.status === 'success') {
+          // Open Success Modal with details
+          document.getElementById('modal-claim-id').innerText = result.claim_id;
+          document.getElementById('success-modal').classList.remove('hidden');
+        } else {
+          alert("Submission failed: " + result.message);
+        }
+      })
+      .catch(err => {
+        console.error("Error submitting claim:", err);
+        alert("Unable to establish connect link with compensation servers.");
+      });
+    }
+
+    function closeSuccessModal() {
+      document.getElementById('success-modal').classList.add('hidden');
+      document.getElementById('insurance-claim-form').reset();
+      updateLossSlider(75);
+    }
+
+    // Visual Background Ambient Circles
+    function initGlobalAmbientBackground() {
+      const targetLayer = document.getElementById('ambient-backdrop');
+      if (!targetLayer) return;
+
+      const themeColors = ["#3B82F6", "#34D399", "#F59E0B", "#A78BFA", "#EC4899"];
+      const viewSize = Math.max(window.innerWidth, window.innerHeight);
+
+      themeColors.forEach(color => {
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("class", "absolute animate-background-gradient");
+        
+        svg.style.top = `${Math.random() * 40 + 10}%`;
+        svg.style.left = `${Math.random() * 40 + 10}%`;
+        svg.style.setProperty("--background-gradient-speed", `${20 + Math.random() * 15}s`);
+        
+        svg.style.setProperty("--tx-1", Math.random() - 0.5);
+        svg.style.setProperty("--ty-1", Math.random() - 0.5);
+        svg.style.setProperty("--tx-2", Math.random() - 0.5);
+        svg.style.setProperty("--ty-2", Math.random() - 0.5);
+        svg.style.setProperty("--tx-3", Math.random() - 0.5);
+        svg.style.setProperty("--ty-3", Math.random() - 0.5);
+        svg.style.setProperty("--tx-4", Math.random() - 0.5);
+        svg.style.setProperty("--ty-4", Math.random() - 0.5);
+        
+        const responsiveScale = 0.7 + Math.random() * 0.8;
+        svg.setAttribute("width", viewSize * responsiveScale);
+        svg.setAttribute("height", viewSize * responsiveScale);
+        svg.setAttribute("viewBox", "0 0 100 100");
+        
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("cx", "50");
+        circle.setAttribute("cy", "50");
+        circle.setAttribute("r", "50");
+        circle.setAttribute("fill", color);
+        
+        svg.appendChild(circle);
+        targetLayer.appendChild(svg);
+      });
+    }
+  </script>
+  <script src="/auth.js"></script>
+</body>
+</html>
