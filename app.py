@@ -179,6 +179,7 @@ def analyze_field():
     if not session.get('user_id'):
         return jsonify({"status": "error", "message": "Unauthorized. Please sign in or register first."}), 401
         
+    # Fixed Route Thread Guard: Checking initialization safely using the correct helper method
     try:
         is_ee_ready = ee.data.is_initialized()
     except Exception:
