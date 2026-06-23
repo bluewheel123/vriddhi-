@@ -1,8 +1,10 @@
 from flask import Flask, request, jsonify, render_template, redirect, url_for, session
 from flask_cors import CORS
 import ee
+import json
 from datetime import datetime, timedelta
 import uuid
+import os
 from pymongo import MongoClient
 import certifi
 
@@ -89,12 +91,37 @@ if marketplace_col.count_documents({}) == 0:
         }
     ])
 
-# Initialize Earth Engine
-try:
-    ee.Initialize()
-    print("======> Google Earth Engine initialized successfully! <======")
-except Exception as e:
-    print("======> GEE Initialization Failed! Error:", str(e))
+def force_ee_initialization():
+    """Bulletproof Earth Engine initialization engine for cloud deployments."""
+    if ee.data._initialized:
+        return True
+        
+    raw_key = os.getenv('EARTHENGINE_SERVICE_ACCOUNT_KEY')
+    if raw_key:
+        try:
+            raw_key = raw_key.strip()
+            if raw_key.startswith("'") and raw_key.endswith("'"): raw_key = raw_key[1:-1]
+            if raw_key.startswith('"') and raw_key.endswith('"'): raw_key = raw_key[1:-1]
+            
+            key_data = json.loads(raw_key)
+            credentials = ee.ServiceAccountCredentials(key_data['client_email'], key_data)
+            ee.Initialize(credentials, project=key_data['project_id'])
+            print("======> GEE initialized successfully via Service Account! <======")
+            return True
+        except Exception as e:
+            print("======> GEE Service Account Init Failed! Error:", str(e))
+            return False
+    else:
+        try:
+            ee.Initialize()
+            print("======> GEE initialized successfully via local context credentials! <======")
+            return True
+        except Exception as e:
+            print("======> GEE Local Initialization Fallback Failed! Error:", str(e))
+            return False
+
+# Run initialization engine once at global instance start
+force_ee_initialization()
 
 @app.route('/api/farmer-stats', methods=['GET'])
 def get_farmer_stats():
@@ -143,6 +170,13 @@ def coordinates_are_close(geom1, geom2, tolerance=0.005):
 def analyze_field():
     if not session.get('user_id'):
         return jsonify({"status": "error", "message": "Unauthorized. Please sign in or register first."}), 401
+        
+    # Thread verification guard check for Render environments
+    if not ee.data._initialized:
+        print("🔄 Verification fallback: Re-authenticating dynamic context request stream...")
+        if not force_ee_initialization():
+            return jsonify({"status": "error", "message": "Earth Engine client library is currently uninitialized on the host."}), 500
+
     try:
         data = request.get_json()
         if not data or 'geometry' not in data:
@@ -202,7 +236,6 @@ def analyze_field():
         save_status = "Pending Verification" if new_anomaly_count > 0 else "Clean"
 
         if previous_scan:
-            # --- FIXED: Bulletproof Timestamp Parser Engine ---
             prev_timestamp_val = previous_scan["timestamp"]
             if isinstance(prev_timestamp_val, datetime):
                 prev_time = prev_timestamp_val
@@ -212,20 +245,16 @@ def analyze_field():
             days_elapsed = (now - prev_time).days
             old_anomaly_features = previous_scan.get("anomaly_data", {}).get("features", [])
 
-            # --- TIME WINDOW VALIDATION ENGINE ---
             if days_elapsed < 5:
-                # Scenario A: Too soon for a realistic satellite refresh cycle
                 message = f"Too early to verify! Only {days_elapsed} days elapsed. Please wait at least 5 days for the next satellite pass."
-                save_status = "Pending Verification"  # Keep old baseline active
+                save_status = "Pending Verification"
             elif days_elapsed > 10:
-                # Scenario B: Exceeded crop recovery deadline parameters
                 message = f"Remediation expired! It took {days_elapsed} days (Deadline was 10 days). Baseline reset."
                 history_col.update_many(
                     {"farmer_id": DUMMY_FARMER_ID, "status": "Pending Verification"},
                     {"$set": {"status": "Expired"}}
                 )
             else:
-                # Scenario C: Within the valid 5-10 day sweet spot
                 if len(old_anomaly_features) > 0 and new_anomaly_count == 0:
                     credit_awarded = 50
                     users_col.update_one(
@@ -296,7 +325,6 @@ def marketplace():
     """Renders the marketplace showing farm medicines and essentials."""
     try:
         items = list(marketplace_col.find({}, {"_id": 0}))
-        # Fetch credits to render preloaded
         user = users_col.find_one({"farmer_id": DUMMY_FARMER_ID})
         credits = user.get("credit_points", 0) if user else 0
         return render_template('marketplace.html', items=items, credits=credits)
@@ -330,7 +358,6 @@ def add_marketplace_item():
         except ValueError:
             return jsonify({"status": "error", "message": "Price must be a valid number"}), 400
 
-        # Set fallback image if empty
         if not image_url or image_url.strip() == "":
             if item_type == "medicine":
                 image_url = "https://images.unsplash.com/photo-1599599810769-bcde5a160d32?auto=format&fit=crop&w=400&q=80"
@@ -368,7 +395,6 @@ def insurance_claim():
             else:
                 data = request.form
 
-            # Extract fields
             farmer_id = data.get('farmer_id', DUMMY_FARMER_ID)
             farmer_name = data.get('farmer_name', 'anchu')
             field_details = data.get('field_details')
@@ -416,7 +442,6 @@ def insurance_claim():
             print("Error submitting insurance claim:", str(e))
             return jsonify({"status": "error", "message": str(e)}), 500
             
-    # GET request
     try:
         return render_template('insurance.html')
     except Exception as e:
@@ -436,11 +461,9 @@ def api_register():
         if not name or not phone or not email or not address or not password:
             return jsonify({"status": "error", "message": "All fields are required"}), 400
 
-        # Check if user already exists
         if users_col.find_one({"email": email}):
             return jsonify({"status": "error", "message": "Email is already registered"}), 400
 
-        # Generate a new farmer_id
         last_user = users_col.find_one(sort=[("farmer_id", -1)])
         new_farmer_id = (last_user["farmer_id"] + 1) if (last_user and "farmer_id" in last_user) else 102
 
@@ -457,7 +480,6 @@ def api_register():
         
         session['user_id'] = new_farmer_id
         
-        # Prepare response (remove password)
         user_doc.pop("password", None)
         user_doc.pop("_id", None)
         return jsonify({"status": "success", "message": "Registration successful!", "user": user_doc})
@@ -479,7 +501,6 @@ def api_login():
         if not user:
             return jsonify({"status": "error", "message": "Invalid email or password"}), 401
 
-        # Prepare response (remove password)
         user_doc = dict(user)
         user_doc.pop("password", None)
         user_doc.pop("_id", None)
