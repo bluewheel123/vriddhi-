@@ -94,7 +94,6 @@ if marketplace_col.count_documents({}) == 0:
 def force_ee_initialization():
     """Bulletproof Earth Engine initialization engine for cloud deployments."""
     try:
-        # Fixed: Checking initialization status safely via the official method
         if ee.data.is_initialized():
             return True
     except Exception:
@@ -103,17 +102,22 @@ def force_ee_initialization():
     raw_key = os.getenv('EARTHENGINE_SERVICE_ACCOUNT_KEY')
     if raw_key:
         try:
-            raw_key = raw_key.strip()
-            if raw_key.startswith("'") and raw_key.endswith("'"): raw_key = raw_key[1:-1]
-            if raw_key.startswith('"') and raw_key.endswith('"'): raw_key = raw_key[1:-1]
+            # Check if environment variable is passed parsed as a dict map object
+            if isinstance(raw_key, dict):
+                key_data = raw_key
+            else:
+                # Process clean string execution logic mappings safely
+                raw_key = raw_key.strip()
+                if raw_key.startswith("'") and raw_key.endswith("'"): raw_key = raw_key[1:-1]
+                if raw_key.startswith('"') and raw_key.endswith('"'): raw_key = raw_key[1:-1]
+                key_data = json.loads(raw_key)
             
-            key_data = json.loads(raw_key)
             credentials = ee.ServiceAccountCredentials(key_data['client_email'], key_data)
             ee.Initialize(credentials, project=key_data['project_id'])
             print("======> GEE initialized successfully via Service Account! <======")
             return True
         except Exception as e:
-            print("======> GEE Service Account Init Failed! Error:", str(e))
+            print(f"❌ CRITICAL GEE AUTH FAILURE DETECTED: {str(e)}")
             return False
     else:
         try:
@@ -175,7 +179,6 @@ def analyze_field():
     if not session.get('user_id'):
         return jsonify({"status": "error", "message": "Unauthorized. Please sign in or register first."}), 401
         
-    # Thread verification guard check using the official initialization verification check method
     try:
         is_ee_ready = ee.data.is_initialized()
     except Exception:
