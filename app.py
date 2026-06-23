@@ -99,7 +99,7 @@ def force_ee_initialization():
     except Exception:
         pass
         
-    raw_key = os.getenv('EARTHENGINE_SERVICE_ACCOUNT_KEY')
+    raw_key = os.getenv('GEE_JSON_KEY')
     if raw_key:
         try:
             # Check if environment variable is passed parsed as a dict map object
