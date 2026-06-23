@@ -4,6 +4,7 @@ import ee
 from datetime import datetime, timedelta
 import uuid
 from pymongo import MongoClient
+import certifi
 
 app = Flask(__name__, template_folder='.', static_folder='.', static_url_path='')
 app.secret_key = 'vriddhi_super_secret_session_key_987'
@@ -11,7 +12,7 @@ CORS(app)
 
 # 1. Connect to MongoDB Atlas
 MONGO_URI = "mongodb+srv://sunlightedsky7239_db_user:5hu6rjoTezOHu0wV@cluster0.dbbcipx.mongodb.net/?appName=Cluster0"
-client = MongoClient(MONGO_URI)
+client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
 db = client["agriculture_app"]
 users_col = db["farmer_profiles"]
 history_col = db["fields_telemetry"]
