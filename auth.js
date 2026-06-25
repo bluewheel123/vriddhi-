@@ -100,16 +100,6 @@ document.addEventListener('DOMContentLoaded', () => {
           <span id="auth-btn-text">Sign In</span>
         </button>
 
-        <!-- Google Sign In Demo -->
-        <button onclick="alert('Google Sign-In is a demo feature. Please use regular register/login options.')" class="w-full mt-3 flex items-center justify-center gap-2 bg-gradient-to-b from-[#232526] to-[#2d2e30] border border-white/5 rounded-xl py-3 font-semibold text-white shadow hover:brightness-110 transition active:scale-[0.98] text-sm">
-          <img
-            src="https://www.svgrepo.com/show/475656/google-color.svg"
-            alt="Google"
-            class="w-5 h-5"
-          />
-          Continue with Google
-        </button>
-
         <div class="w-full text-center mt-6">
           <span class="text-xs text-gray-400" id="auth-switch-prompt">
             Don't have an account? 
@@ -132,7 +122,40 @@ document.addEventListener('DOMContentLoaded', () => {
     // Auto prompt login if requested via redirect URL params
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('prompt_login') === 'true') {
-        openLoginModal();
+        const loggedInUser = localStorage.getItem('logged_in_user');
+        if (loggedInUser) {
+            try {
+                const userObj = JSON.parse(loggedInUser);
+                fetch('/api/sync-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ farmer_id: userObj.farmer_id })
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            // Redirect back to dashboard since we restored the session
+                            window.location.href = '/dashboard';
+                        } else {
+                            localStorage.removeItem('logged_in_user');
+                            updateAuthUI();
+                            openLoginModal();
+                        }
+                    })
+                    .catch(err => {
+                        console.error("Session sync failed:", err);
+                        openLoginModal();
+                    });
+            } catch (e) {
+                localStorage.removeItem('logged_in_user');
+                updateAuthUI();
+                openLoginModal();
+            }
+        } else {
+            openLoginModal();
+        }
+    } else {
+        syncSession();
     }
 });
 
@@ -142,7 +165,7 @@ let currentAuthTab = 'login';
 function openLoginModal() {
     const modal = document.getElementById('auth-modal');
     if (modal) modal.classList.remove('hidden');
-    
+
     const errorDiv = document.getElementById('auth-error');
     if (errorDiv) errorDiv.classList.add('hidden');
 }
@@ -205,29 +228,29 @@ function handleAuthSubmit() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
         })
-        .then(res => res.json())
-        .then(data => {
-            if (data.status === 'success') {
-                localStorage.setItem('logged_in_user', JSON.stringify(data.user));
-                closeLoginModal();
-                updateAuthUI();
-                prefillInsuranceForm();
-                alert("Login successful!");
-                window.location.reload();
-            } else {
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    localStorage.setItem('logged_in_user', JSON.stringify(data.user));
+                    closeLoginModal();
+                    updateAuthUI();
+                    prefillInsuranceForm();
+                    alert("Login successful!");
+                    window.location.reload();
+                } else {
+                    if (errDiv) {
+                        errDiv.innerText = data.message;
+                        errDiv.classList.remove('hidden');
+                    }
+                }
+            })
+            .catch(err => {
+                console.error("Login error:", err);
                 if (errDiv) {
-                    errDiv.innerText = data.message;
+                    errDiv.innerText = "Failed to connect to authentication server.";
                     errDiv.classList.remove('hidden');
                 }
-            }
-        })
-        .catch(err => {
-            console.error("Login error:", err);
-            if (errDiv) {
-                errDiv.innerText = "Failed to connect to authentication server.";
-                errDiv.classList.remove('hidden');
-            }
-        });
+            });
     } else {
         const name = document.getElementById('auth-name').value.trim();
         const phone = document.getElementById('auth-phone').value.trim();
@@ -246,51 +269,78 @@ function handleAuthSubmit() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, phone, email, address, password })
         })
-        .then(res => res.json())
-        .then(data => {
-            if (data.status === 'success') {
-                localStorage.setItem('logged_in_user', JSON.stringify(data.user));
-                closeLoginModal();
-                updateAuthUI();
-                prefillInsuranceForm();
-                alert("Registration successful! Welcome to Vriddhi.");
-                window.location.reload();
-            } else {
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    localStorage.setItem('logged_in_user', JSON.stringify(data.user));
+                    closeLoginModal();
+                    updateAuthUI();
+                    prefillInsuranceForm();
+                    alert("Registration successful! Welcome to Vriddhi.");
+                    window.location.reload();
+                } else {
+                    if (errDiv) {
+                        errDiv.innerText = data.message;
+                        errDiv.classList.remove('hidden');
+                    }
+                }
+            })
+            .catch(err => {
+                console.error("Registration error:", err);
                 if (errDiv) {
-                    errDiv.innerText = data.message;
+                    errDiv.innerText = "Failed to connect to authentication server.";
                     errDiv.classList.remove('hidden');
                 }
-            }
-        })
-        .catch(err => {
-            console.error("Registration error:", err);
-            if (errDiv) {
-                errDiv.innerText = "Failed to connect to authentication server.";
-                errDiv.classList.remove('hidden');
-            }
-        });
+            });
     }
 }
 
 function handleLogout() {
     fetch('/api/logout', { method: 'POST' })
-    .then(() => {
-        localStorage.removeItem('logged_in_user');
-        updateAuthUI();
-        prefillInsuranceForm();
-        alert("Logged out successfully.");
-        window.location.href = "/";
-    })
-    .catch(err => {
-        console.error("Logout error:", err);
-        localStorage.removeItem('logged_in_user');
-        window.location.href = "/";
-    });
+        .then(() => {
+            localStorage.removeItem('logged_in_user');
+            updateAuthUI();
+            prefillInsuranceForm();
+            alert("Logged out successfully.");
+            window.location.href = "/";
+        })
+        .catch(err => {
+            console.error("Logout error:", err);
+            localStorage.removeItem('logged_in_user');
+            window.location.href = "/";
+        });
+}
+
+function syncSession() {
+    const loggedInUser = localStorage.getItem('logged_in_user');
+    if (loggedInUser) {
+        try {
+            const userObj = JSON.parse(loggedInUser);
+            if (userObj && userObj.farmer_id) {
+                fetch('/api/sync-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ farmer_id: userObj.farmer_id })
+                })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status !== 'success') {
+                            localStorage.removeItem('logged_in_user');
+                            updateAuthUI();
+                        }
+                    })
+                    .catch(err => console.error("Error syncing session:", err));
+            }
+        } catch (e) {
+            localStorage.removeItem('logged_in_user');
+            updateAuthUI();
+        }
+    }
 }
 
 function updateAuthUI() {
     const loggedInUser = JSON.parse(localStorage.getItem('logged_in_user'));
-    
+
     // Dynamic navbar button triggers
     const loginBtns = document.querySelectorAll('#nav-login-btn');
     loginBtns.forEach(btn => {
