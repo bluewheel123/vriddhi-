@@ -168,10 +168,12 @@ def get_farmer_stats():
             fid = int(farmer_id_val)
         except ValueError:
             fid = farmer_id_val
-        user = users_col.find_one({"farmer_id": fid})
+    elif session.get('user_id'):
+        fid = session.get('user_id')
     else:
-        user = users_col.find_one({"farmer_id": DUMMY_FARMER_ID})
-    
+        fid = DUMMY_FARMER_ID
+        
+    user = users_col.find_one({"farmer_id": fid})
     if not user:
         return jsonify({"credit_points": 0})
     return jsonify({"credit_points": user.get("credit_points", 0)})
@@ -260,10 +262,12 @@ def analyze_field():
         anomaly_geojson = anomaly_vectors.getInfo()
         new_anomaly_count = len(anomaly_geojson.get('features', []))
 
+        user_id = session.get('user_id')
+
         # Check for previous anomalies in this field location
         previous_scan = None
         pending_scans = history_col.find({
-            "farmer_id": DUMMY_FARMER_ID,
+            "farmer_id": user_id,
             "status": "Pending Verification"
         }, sort=[("timestamp", -1)])
         
@@ -292,18 +296,18 @@ def analyze_field():
             elif days_elapsed > 10:
                 message = f"Remediation expired! It took {days_elapsed} days (Deadline was 10 days). Baseline reset."
                 history_col.update_many(
-                    {"farmer_id": DUMMY_FARMER_ID, "status": "Pending Verification"},
+                    {"farmer_id": user_id, "status": "Pending Verification"},
                     {"$set": {"status": "Expired"}}
                 )
             else:
                 if len(old_anomaly_features) > 0 and new_anomaly_count == 0:
                     credit_awarded = 50
                     users_col.update_one(
-                        {"farmer_id": DUMMY_FARMER_ID},
+                        {"farmer_id": user_id},
                         {"$inc": {"credit_points": credit_awarded}}
                     )
                     history_col.update_many(
-                        {"farmer_id": DUMMY_FARMER_ID, "status": "Pending Verification"},
+                        {"farmer_id": user_id, "status": "Pending Verification"},
                         {"$set": {"status": "Resolved"}}
                     )
                     message = f"Congratulations! Crop stress cleared in {days_elapsed} days. +50 Remediation Credits added."
@@ -317,7 +321,7 @@ def analyze_field():
 
         # Commit current tracking record to MongoDB
         history_col.insert_one({
-            "farmer_id": DUMMY_FARMER_ID,
+            "farmer_id": user_id,
             "timestamp": now.isoformat(),
             "status": save_status,
             "boundary_geometry": geojson_geometry,
@@ -325,7 +329,7 @@ def analyze_field():
         })
 
         # Fetch fresh current credit score balance
-        updated_user = users_col.find_one({"farmer_id": DUMMY_FARMER_ID})
+        updated_user = users_col.find_one({"farmer_id": user_id})
 
         return jsonify({
             "status": "success",
@@ -366,7 +370,8 @@ def marketplace():
     """Renders the marketplace showing farm medicines and essentials."""
     try:
         items = list(marketplace_col.find({}, {"_id": 0}))
-        user = users_col.find_one({"farmer_id": DUMMY_FARMER_ID})
+        user_id = session.get('user_id') or DUMMY_FARMER_ID
+        user = users_col.find_one({"farmer_id": user_id})
         credits = user.get("credit_points", 0) if user else 0
         return render_template('marketplace.html', items=items, credits=credits)
     except Exception as e:
@@ -551,6 +556,31 @@ def api_login():
         return jsonify({"status": "success", "message": "Login successful!", "user": user_doc})
     except Exception as e:
         print("Login error:", str(e))
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/sync-session', methods=['POST'])
+def api_sync_session():
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"status": "error", "message": "Missing request payload"}), 400
+        farmer_id = data.get('farmer_id')
+        if not farmer_id:
+            return jsonify({"status": "error", "message": "Missing farmer_id"}), 400
+        
+        try:
+            fid = int(farmer_id)
+        except ValueError:
+            fid = farmer_id
+            
+        user = users_col.find_one({"farmer_id": fid})
+        if not user:
+            return jsonify({"status": "error", "message": "User not found in database"}), 404
+            
+        session['user_id'] = fid
+        return jsonify({"status": "success", "message": "Session synced successfully!"})
+    except Exception as e:
+        print("Session sync error:", str(e))
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/api/logout', methods=['POST'])
