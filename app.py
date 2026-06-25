@@ -7,6 +7,10 @@ import uuid
 import os
 from pymongo import MongoClient
 import certifi
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 print("====================================================")
 print("🚀 CACHE BREAKER v2.0: RUNNING BRUTE FORCE CODE ENGINE!!")
@@ -17,7 +21,9 @@ app.secret_key = 'vriddhi_super_secret_session_key_987'
 CORS(app)
 
 # 1. Connect to MongoDB Atlas
-MONGO_URI = "mongodb+srv://sunlightedsky7239_db_user:5hu6rjoTezOHu0wV@cluster0.dbbcipx.mongodb.net/?appName=Cluster0"
+MONGO_URI = os.getenv("MONGO_URI")
+if not MONGO_URI:
+    raise ValueError("MONGO_URI environment variable is not set. Please check your .env file.")
 client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
 db = client["agriculture_app"]
 users_col = db["farmer_profiles"]
