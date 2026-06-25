@@ -1,0 +1,14 @@
+# Environment variables
+.env
+
+# Python caches and bytecodes
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.ipynb_checkpoints/
+.venv/
+venv/
+ENV/
+env/
