@@ -274,30 +274,34 @@
                 padding: 0.85rem;
             }
 
-            .search-container {
-                width: 100%;
-                display: flex;
-            }
-
-            .search-input-wrapper {
-                width: 100%;
-                flex: 1;
-            }
-
-            .search-input {
-                width: 100%;
-            }
-
-            .search-btn {
-                justify-content: center;
-            }
-
             .action-group {
                 flex-direction: column;
                 align-items: stretch;
                 width: 100%;
                 gap: 0.5rem;
             }
+
+            .search-container {
+                width: 100%;
+                display: flex;
+            }
+
+            .search-input {
+                flex: 1;
+                min-width: 0;
+                width: 100%;
+            }
+
+            .search-btn {
+                justify-content: center;
+            }
+        }
+
+        .action-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
         }
 
         .search-container {
@@ -307,12 +311,12 @@
         }
 
         .search-input {
-            padding: 0.75rem 1rem 0.75rem 2.25rem;
+            padding: 0.75rem 1rem;
             font-size: 0.95rem;
             border: 1px solid rgba(229, 231, 235, 1);
             border-radius: 8px;
             outline: none;
-            width: 100%;
+            width: 220px;
             transition: all 0.2s ease;
         }
 
@@ -341,13 +345,6 @@
         .search-btn:hover {
             background: #111827;
             transform: translateY(-1px);
-        }
-
-        .action-group {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            flex-wrap: wrap;
         }
     </style>
 </head>
@@ -386,10 +383,7 @@
             </div>
             <div class="action-group">
                 <div class="search-container">
-                    <div class="search-input-wrapper">
-                        <img src="logo.png" alt="Search Icon" class="search-logo-icon" />
-                        <input type="text" id="search-input" placeholder="Search location..." class="search-input" />
-                    </div>
+                    <input type="text" id="search-input" placeholder="Search location..." class="search-input" />
                     <button id="search-btn" class="search-btn">
                         <i class="fa-solid fa-magnifying-glass"></i>
                         Search
@@ -407,13 +401,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
     <script>
         // Center map over Assam by default, then attempt to locate the user
-        var map = L.map('map', { maxZoom: 20 }).setView([26.1445, 91.7362], 19);
+        var map = L.map('map', { maxZoom: 21 }).setView([26.1445, 91.7362], 20);
 
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(function (position) {
                 var lat = position.coords.latitude;
                 var lng = position.coords.longitude;
-                map.setView([lat, lng], 19);
+                map.setView([lat, lng], 20);
             }, function (error) {
                 console.warn("Geolocation access denied or failed: ", error.message);
             }, {
@@ -425,7 +419,7 @@
 
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
             attribution: 'Tiles &copy; Esri &mdash; Core Imaging Processing Framework',
-            maxZoom: 20,
+            maxZoom: 21,
             maxNativeZoom: 19
         }).addTo(map);
 
@@ -564,7 +558,7 @@
                     if (data && data.length > 0) {
                         var lat = parseFloat(data[0].lat);
                         var lon = parseFloat(data[0].lon);
-                        map.setView([lat, lon], 19);
+                        map.setView([lat, lon], 20);
                     } else {
                         alert("Location not found. Please try a different query.");
                     }
