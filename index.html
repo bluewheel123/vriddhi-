@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Vriddhi 2.0 - Field Matrix Scanner</title>
+    <link rel="icon" type="image/png" href="logo.png" />
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
@@ -278,9 +279,13 @@
                 display: flex;
             }
 
-            .search-input {
+            .search-input-wrapper {
+                width: 100%;
                 flex: 1;
-                min-width: 0;
+            }
+
+            .search-input {
+                width: 100%;
             }
 
             .search-btn {
@@ -301,13 +306,30 @@
             gap: 0.5rem;
         }
 
+        .search-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 220px;
+        }
+
+        .search-logo-icon {
+            position: absolute;
+            left: 10px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            pointer-events: none;
+            object-fit: cover;
+        }
+
         .search-input {
-            padding: 0.75rem 1rem;
+            padding: 0.75rem 1rem 0.75rem 2.25rem;
             font-size: 0.95rem;
             border: 1px solid rgba(229, 231, 235, 1);
             border-radius: 8px;
             outline: none;
-            width: 220px;
+            width: 100%;
             transition: all 0.2s ease;
         }
 
@@ -381,7 +403,10 @@
             </div>
             <div class="action-group">
                 <div class="search-container">
-                    <input type="text" id="search-input" placeholder="Search location..." class="search-input" />
+                    <div class="search-input-wrapper">
+                        <img src="logo.png" alt="Search Icon" class="search-logo-icon" />
+                        <input type="text" id="search-input" placeholder="Search location..." class="search-input" />
+                    </div>
                     <button id="search-btn" class="search-btn">
                         <i class="fa-solid fa-magnifying-glass"></i>
                         Search
