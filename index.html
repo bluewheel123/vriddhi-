@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Vriddhi 2.0 - Field Matrix Scanner</title>
-    
+
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
-    
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght=400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -22,10 +23,10 @@
             --gold: #f59e0b;
         }
 
-        body { 
-            margin: 0; 
-            padding: 0; 
-            font-family: 'Inter', sans-serif; 
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
             background-color: var(--bg-color);
             color: var(--dark-slate);
             display: flex;
@@ -130,7 +131,8 @@
             gap: 1.25rem;
             box-sizing: border-box;
             height: calc(100vh - 70px);
-            min-height: 0; /* Prevents flex items from breaking layout overflow constraints */
+            min-height: 0;
+            /* Prevents flex items from breaking layout overflow constraints */
         }
 
         .map-wrapper {
@@ -144,9 +146,9 @@
             min-height: 200px;
         }
 
-        #map { 
-            width: 100%; 
-            height: 100%; 
+        #map {
+            width: 100%;
+            height: 100%;
         }
 
         /* Clean Bottom Action Bar */
@@ -172,16 +174,16 @@
             line-height: 1.4;
         }
 
-        .btn { 
-            background: var(--primary); 
-            color: white; 
-            border: none; 
-            padding: 0.75rem 1.75rem; 
-            font-size: 0.95rem; 
-            font-weight: 600; 
-            cursor: pointer; 
-            border-radius: 8px; 
-            transition: all 0.2s ease; 
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.75rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s ease;
             display: flex;
             align-items: center;
             gap: 0.5rem;
@@ -189,8 +191,8 @@
             white-space: nowrap;
         }
 
-        .btn:hover { 
-            background: var(--primary-hover); 
+        .btn:hover {
+            background: var(--primary-hover);
             transform: translateY(-1px);
             box-shadow: 0 6px 8px -1px rgba(16, 185, 129, 0.3);
         }
@@ -200,14 +202,22 @@
         }
 
         @keyframes coin-pulse {
-            0% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(245, 158, 11, 0)); }
-            100% { transform: scale(1.15); filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.5)); }
+            0% {
+                transform: scale(1);
+                filter: drop-shadow(0 0 0 rgba(245, 158, 11, 0));
+            }
+
+            100% {
+                transform: scale(1.15);
+                filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.5));
+            }
         }
 
         /* Responsive Breakpoints Matrix */
         @media (max-width: 768px) {
             body {
-                overflow: auto; /* Allow natural scrolling on small touchscreens if required */
+                overflow: auto;
+                /* Allow natural scrolling on small touchscreens if required */
                 height: auto;
             }
 
@@ -239,7 +249,8 @@
             }
 
             .map-wrapper {
-                height: 450px; /* Locked explicit layout altitude block for mobile views */
+                height: 450px;
+                /* Locked explicit layout altitude block for mobile views */
                 flex: none;
             }
 
@@ -261,24 +272,77 @@
                 width: 100%;
                 padding: 0.85rem;
             }
+
+            .search-container {
+                width: 100%;
+            }
+
+            .search-input {
+                width: 100%;
+            }
+        }
+
+        .search-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .search-input {
+            padding: 0.75rem 1rem;
+            font-size: 0.95rem;
+            border: 1px solid rgba(229, 231, 235, 1);
+            border-radius: 8px;
+            outline: none;
+            width: 220px;
+            transition: all 0.2s ease;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.1);
+        }
+
+        .search-btn {
+            background: var(--dark-slate);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.25rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(31, 41, 55, 0.1);
+            white-space: nowrap;
+        }
+
+        .search-btn:hover {
+            background: #111827;
+            transform: translateY(-1px);
         }
     </style>
 </head>
+
 <body>
 
     <nav class="navbar">
         <div class="brand">
-            <img src="logo.png" alt="Vriddhi Logo" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; margin-right: 8px; border: 1px solid rgba(229, 231, 235, 1); box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);" />
+            <img src="logo.png" alt="Vriddhi Logo"
+                style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; margin-right: 8px; border: 1px solid rgba(229, 231, 235, 1); box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);" />
             <div class="brand-text">Vriddhi <span>2.0</span></div>
         </div>
-        
+
         <div class="nav-links">
             <a href="/" class="nav-link">Home</a>
             <a href="/dashboard" class="nav-link active">Dashboard</a>
             <a href="/marketplace" class="nav-link">Marketplace</a>
             <a href="/insurance-claim" class="nav-link">Insurance Claim</a>
         </div>
-        
+
         <div class="rewards-widget" id="credit-display">
             <i class="fa-solid fa-coins"></i>
             <span id="credit-count">100</span> Remediation Credits
@@ -289,28 +353,52 @@
         <div class="map-wrapper">
             <div id="map"></div>
         </div>
-        
+
         <div class="action-bar">
             <div class="info-text">
                 <i class="fa-solid fa-circle-info"></i>
                 <span>Draw a bounding polygon over target crop grids to initialize spatial telemetry tracking.</span>
             </div>
-            <button id="launch-btn" class="btn">
-                <i class="fa-solid fa-satellite-dish"></i>
-                Launch Field Analysis
-            </button>
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                <div class="search-container">
+                    <input type="text" id="search-input" placeholder="Search location..." class="search-input" />
+                    <button id="search-btn" class="search-btn">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        Search
+                    </button>
+                </div>
+                <button id="launch-btn" class="btn">
+                    <i class="fa-solid fa-satellite-dish"></i>
+                    Launch Field Analysis
+                </button>
+            </div>
         </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
-
     <script>
-        // Center map over Assam
-        var map = L.map('map').setView([26.1445, 91.7362], 13);
+        // Center map over Assam by default, then attempt to locate the user
+        var map = L.map('map', { maxZoom: 20 }).setView([26.1445, 91.7362], 19);
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function (position) {
+                var lat = position.coords.latitude;
+                var lng = position.coords.longitude;
+                map.setView([lat, lng], 19);
+            }, function (error) {
+                console.warn("Geolocation access denied or failed: ", error.message);
+            }, {
+                enableHighAccuracy: true,
+                timeout: 5000,
+                maximumAge: 0
+            });
+        }
 
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: 'Tiles &copy; Esri &mdash; Core Imaging Processing Framework'
+            attribution: 'Tiles &copy; Esri &mdash; Core Imaging Processing Framework',
+            maxZoom: 20,
+            maxNativeZoom: 19
         }).addTo(map);
 
         // Fetch user credit tally immediately on website page load
@@ -337,13 +425,13 @@
             if (!g || scannedGeometriesList.length === 0) return false;
             var coords = g.geometry ? g.geometry.coordinates : g.coordinates;
             var coordsStr = JSON.stringify(coords);
-            return scannedGeometriesList.some(function(item) {
+            return scannedGeometriesList.some(function (item) {
                 return JSON.stringify(item) === coordsStr;
             });
         }
 
         map.on(L.Draw.Event.CREATED, function (e) {
-            drawnItems.clearLayers(); 
+            drawnItems.clearLayers();
             var layer = e.layer;
             drawnItems.addLayer(layer);
             activeFieldGeoJSON = layer.toGeoJSON();
@@ -358,7 +446,7 @@
                     var areaInHectares = (areaInSqMeters / 10000).toFixed(2);
                     localStorage.setItem('selected_area_hectares', areaInHectares);
                 }
-                
+
                 if (typeof layer.getBounds === 'function') {
                     var center = layer.getBounds().getCenter();
                     var lat = center.lat.toFixed(4);
@@ -371,13 +459,13 @@
             }
         });
 
-        document.getElementById('launch-btn').addEventListener('click', function() {
+        document.getElementById('launch-btn').addEventListener('click', function () {
             if (activeFieldGeoJSON) {
                 if (isGeometryInScannedList(activeFieldGeoJSON)) {
                     alert("The new data gets updated after 5 days so please check within day 5 to day 10.");
                     return;
                 }
-                
+
                 const btn = document.getElementById('launch-btn');
                 const originalHTML = btn.innerHTML;
                 btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Processing Matrix...`;
@@ -389,43 +477,84 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(activeFieldGeoJSON)
                 })
-                .then(response => response.json())
-                .then(result => {
-                    btn.innerHTML = originalHTML;
-                    btn.style.opacity = "1";
-                    btn.style.pointerEvents = "auto";
+                    .then(response => response.json())
+                    .then(result => {
+                        btn.innerHTML = originalHTML;
+                        btn.style.opacity = "1";
+                        btn.style.pointerEvents = "auto";
 
-                    if (result.status === "success") {
-                        alert(result.message);
-                        
-                        // Dynamically adjust navbar points tracker using verified database payload values
-                        document.getElementById('credit-count').innerText = result.credit_points;
+                        if (result.status === "success") {
+                            alert(result.message);
 
-                        if (result.data.features.length > 0) {
-                            var coords = activeFieldGeoJSON.geometry ? activeFieldGeoJSON.geometry.coordinates : activeFieldGeoJSON.coordinates;
-                            scannedGeometriesList.push(coords);
-                            L.geoJSON(result.data, {
-                                style: function (feature) {
-                                    return { color: '#ef4444', fillColor: '#f87171', fillOpacity: 0.5, weight: 2 };
-                                }
-                            }).addTo(map).bindPopup("<b>Vriddhi Health Alert</b><br>Severe anomaly signature identified. Clear field stress sections to unlock credit upgrades.");
+                            // Dynamically adjust navbar points tracker using verified database payload values
+                            document.getElementById('credit-count').innerText = result.credit_points;
+
+                            if (result.data.features.length > 0) {
+                                var coords = activeFieldGeoJSON.geometry ? activeFieldGeoJSON.geometry.coordinates : activeFieldGeoJSON.coordinates;
+                                scannedGeometriesList.push(coords);
+                                L.geoJSON(result.data, {
+                                    style: function (feature) {
+                                        return { color: '#ef4444', fillColor: '#f87171', fillOpacity: 0.5, weight: 2 };
+                                    }
+                                }).addTo(map).bindPopup("<b>Vriddhi Health Alert</b><br>Severe anomaly signature identified. Clear field stress sections to unlock credit upgrades.");
+                            }
+                        } else {
+                            alert("Processing Error: " + result.message);
                         }
-                    } else {
-                        alert("Processing Error: " + result.message);
-                    }
-                })
-                .catch(error => {
-                    btn.innerHTML = originalHTML;
-                    btn.style.opacity = "1";
-                    btn.style.pointerEvents = "auto";
-                    console.error('Network Error:', error);
-                    alert("Could not establish communication link with analysis engines.");
-                });
-                
+                    })
+                    .catch(error => {
+                        btn.innerHTML = originalHTML;
+                        btn.style.opacity = "1";
+                        btn.style.pointerEvents = "auto";
+                        console.error('Network Error:', error);
+                        alert("Could not establish communication link with analysis engines.");
+                    });
+
             } else {
                 alert("Please use the polygon toolbar on the map to mark your field boundary first.");
             }
         });
+
+        document.getElementById('search-btn').addEventListener('click', function () {
+            var query = document.getElementById('search-input').value.trim();
+            if (!query) {
+                alert("Please enter a location to search.");
+                return;
+            }
+
+            const searchBtn = document.getElementById('search-btn');
+            const originalHTML = searchBtn.innerHTML;
+            searchBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Searching...`;
+            searchBtn.style.pointerEvents = 'none';
+
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`)
+                .then(res => res.json())
+                .then(data => {
+                    searchBtn.innerHTML = originalHTML;
+                    searchBtn.style.pointerEvents = 'auto';
+
+                    if (data && data.length > 0) {
+                        var lat = parseFloat(data[0].lat);
+                        var lon = parseFloat(data[0].lon);
+                        map.setView([lat, lon], 19);
+                    } else {
+                        alert("Location not found. Please try a different query.");
+                    }
+                })
+                .catch(err => {
+                    console.error("Geocoding error:", err);
+                    searchBtn.innerHTML = originalHTML;
+                    searchBtn.style.pointerEvents = 'auto';
+                    alert("Could not connect to the search service.");
+                });
+        });
+
+        document.getElementById('search-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                document.getElementById('search-btn').click();
+            }
+        });
     </script>
 </body>
+
 </html>
